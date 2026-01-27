@@ -2,9 +2,9 @@ import os
 import sys
 
 from datasets import load_dataset
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING
-from src.model.processor import VLM_IMAGE_TOKENS
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING
+from vlm2vec_for_pyserini.model.processor import VLM_IMAGE_TOKENS
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 
 @add_metainfo_hook

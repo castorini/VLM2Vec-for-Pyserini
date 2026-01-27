@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mmeb_for_pyserini"
+version = "0.0.1"
+authors = [
+     { name = "Ziyan Jiang", email= "ziyanjiang528@gmail.com"},
+     { name = "Rui Meng", email= "memray0@gmail.com"},
+     { name = "Wenhu Chen", email= "wenhuchen@uwaterloo.ca"},
+     { name = "Sahel Sharifymoghaddam", email = "sahel.sharifymoghaddam@uwaterloo.ca" },
+]
+description = "Fork of the original VLM2Vec repository modified for easy and simple Pyserini integration"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+"Homepage" = "https://github.com/castorini/VLM2Vec-for-Pyserini"
+"Bug Tracker" = "https://github.com/castorini/VLM2Vec-for-Pyserini/issues"
+
+[tool.bumpver]
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "Bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"', 'version = "{version}"'
+]
+"README.md" = [
+    'current_version = "{version}"',
+]
+
+[tool.setuptools]
+packages = [
+    "vlm2vec_for_pyserini",
+]
+
+[tool.setuptools.package-dir]
+"vlm2vec_for_pyserini.pyserini_integration" = "src/pyserini_integration"
+"vlm2vec_for_pyserini.utils" = "src/utils"
+"vlm2vec_for_pyserini.data" = "src/data"
+"vlm2vec_for_pyserini.constant" = "src/constant"
+"vlm2vec_for_pyserini.model" = "src/model"
+"vlm2vec_for_pyserini.prompt" = "src/prompt"
+"vlm2vec_for_pyserini.arguments" = "src/arguments"
+"vlm2vec_for_pyserini" = "src"

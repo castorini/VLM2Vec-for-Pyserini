@@ -4,9 +4,9 @@ from datasets.features.image import image_to_bytes
 import io
 
 from torch.jit import isinstance
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
     RESOLUTION_MAPPING
-from src.model.processor import VLM_IMAGE_TOKENS
+from vlm2vec_for_pyserini.model.processor import VLM_IMAGE_TOKENS
 
 
 def process_query(query, prompt, image_token):

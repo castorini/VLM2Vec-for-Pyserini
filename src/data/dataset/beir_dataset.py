@@ -9,9 +9,9 @@ import json
 import random
 import datasets
 
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook
-from src.prompt.base_prompt import AutoPrompt
-from src.utils.text_utils.normalize_text import normalize
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook
+from vlm2vec_for_pyserini.prompt.base_prompt import AutoPrompt
+from vlm2vec_for_pyserini.utils.text_utils.normalize_text import normalize
 
 
 def ex_dict2str(ex_dict, add_title=True):

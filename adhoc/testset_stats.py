@@ -3,9 +3,9 @@ import sys
 
 import numpy as np
 
-from src.arguments import ModelArguments, DataArguments, TrainingArguments
+from vlm2vec_for_pyserini.arguments import ModelArguments, DataArguments, TrainingArguments
 from transformers import HfArgumentParser, AutoProcessor
-from src.dataset import EvalDataset
+from vlm2vec_for_pyserini.dataset import EvalDataset
 import re
 
 def main():

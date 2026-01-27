@@ -1,5 +1,5 @@
 import copy
-from src.prompt.base_prompt import AutoPrompt
+from vlm2vec_for_pyserini.prompt.base_prompt import AutoPrompt
 
 @AutoPrompt.register("tart")
 def load_tart_prompt(task_name, task_type="Retrieval", *args, **kwargs):

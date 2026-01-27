@@ -1,10 +1,11 @@
 import os
+from datasets import Dataset
 
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset, load_qrels_mapping
-from src.model.processor import process_input_text
-from src.utils.basic_utils import print_master
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset, load_qrels_mapping
+from vlm2vec_for_pyserini.model.processor import process_input_text
+from vlm2vec_for_pyserini.utils.basic_utils import print_master
 
 TASK_INST_QRY = "Find a document image that matches the given query:"
 TASK_INST_TGT = "Understand the content of the provided document image."
@@ -49,7 +50,6 @@ def data_prepare(batch_dict, **kwargs):
     return {"query_text": query_texts, "query_image": query_images,
             "cand_text": cand_texts, "cand_image": cand_images,
             "dataset_infos": dataset_infos}
-
 
 def corpus_prepare(batch_dict, *args, **kwargs):
     image_resolution, model_backbone = kwargs['image_resolution'], kwargs['model_backbone']
@@ -109,3 +109,30 @@ def load_vidore_dataset(model_args, data_args, **kwargs):
     dataset = dataset.select_columns(["query_text", "query_image", "cand_text", "cand_image", "dataset_infos"])
 
     return dataset, corpus
+
+class VidoreDatasetForPyserini:
+    def topics_prepare(batch_dict, **kwargs):
+        model_backbone =  kwargs['model_backbone']
+        query_texts, query_images, dataset_infos = [], [], []
+        for query_id, query in zip(batch_dict['qid'], batch_dict['query']):
+            query_texts.append([process_input_text(TASK_INST_QRY, model_backbone, text=query)])
+            query_images.append([None])
+            dataset_infos.append({"qids": [query_id]})
+        return Dataset.from_dict({"query_text": query_texts, "query_image": query_images, "dataset_infos": dataset_infos})
+
+    def corpus_prepare(batch_dict, **kwargs):
+        image_resolution, model_backbone = kwargs['image_resolution'], kwargs['model_backbone']
+        cand_texts, cand_images, dataset_infos = [], [], []
+        for corpus_id, image_path in zip(batch_dict['corpus_id'], batch_dict['image_path']):
+            cand_texts.append([process_input_text(TASK_INST_TGT, model_backbone, add_image_token=True)])
+            cand_images.append([ImageVideoInstance(
+                bytes=[None],
+                paths=[image_path],
+                resolutions=[RESOLUTION_MAPPING.get(image_resolution, None)],
+            ).to_dict()])
+            dataset_infos.append({
+                "cand_name": [corpus_id],
+            })
+
+        return Dataset.from_dict({"cand_text": cand_texts, "cand_image": cand_images,
+                "dataset_infos": dataset_infos})

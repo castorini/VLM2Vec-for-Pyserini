@@ -1,11 +1,11 @@
 import os
 
 from datasets import load_dataset
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, MULTIMODAL_FEATURES
-from src.data.eval_dataset.video_classification_utils import DATASET_INSTRUCTION
-from src.utils.vision_utils.vision_utils import save_frames, load_frames, sample_frames
-from src.utils.dataset_utils import sample_dataset
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, MULTIMODAL_FEATURES
+from vlm2vec_for_pyserini.data.eval_dataset.video_classification_utils import DATASET_INSTRUCTION
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import save_frames, load_frames, sample_frames
+from vlm2vec_for_pyserini.utils.dataset_utils import sample_dataset
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 
 @add_metainfo_hook

@@ -49,8 +49,8 @@ from transformers.utils import (
     replace_return_docstrings,
 )
 
-from src.utils.basic_utils import print_rank
-from .configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLVisionConfig
+from vlm2vec_for_pyserini.utils.basic_utils import print_rank
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl.configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLVisionConfig
 
 
 if is_flash_attn_2_available():

@@ -1,6 +1,6 @@
-from src.model.model import MMEBModel
-from src.arguments import ModelArguments
-from src.model.processor import load_processor
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.arguments import ModelArguments
+from vlm2vec_for_pyserini.model.processor import load_processor
 import torch
 from PIL import Image
 

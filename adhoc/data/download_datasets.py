@@ -1,6 +1,6 @@
 import os
 from datasets import load_dataset
-from src.utils.basic_utils import print_rank
+from vlm2vec_for_pyserini.utils.basic_utils import print_rank
 
 # --- Visual Document Datasets ---
 VISDOC_DATASETS = {

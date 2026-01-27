@@ -19,13 +19,13 @@ from transformers import HfArgumentParser, AutoConfig
 from datasets import Dataset, concatenate_datasets
 from datasets.distributed import split_dataset_by_node
 
-from src.arguments import ModelArguments, DataArguments, TrainingArguments
-from src.data.collator.eval_collator import MultimodalEvalDataCollator
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, generate_cand_dataset
-from src.utils.eval_utils.metrics import RankingMetrics
-from src.model.model import MMEBModel
-from src.model.processor import get_backbone_name, load_processor, COLPALI
-from src.utils.basic_utils import batch_to_device, print_rank, print_master
+from vlm2vec_for_pyserini.arguments import ModelArguments, DataArguments, TrainingArguments
+from vlm2vec_for_pyserini.data.collator.eval_collator import MultimodalEvalDataCollator
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, generate_cand_dataset
+from vlm2vec_for_pyserini.utils.eval_utils.metrics import RankingMetrics
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.model.processor import get_backbone_name, load_processor, COLPALI
+from vlm2vec_for_pyserini.utils.basic_utils import batch_to_device, print_rank, print_master
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s')
 logger = logging.getLogger(__name__)

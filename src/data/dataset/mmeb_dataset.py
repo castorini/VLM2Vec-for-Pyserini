@@ -6,9 +6,9 @@ import os
 from datasets.features.image import image_to_bytes
 
 from torch.jit import isinstance
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, RESOLUTION_MAPPING
-from src.model.processor import PHI3V, VLM_IMAGE_TOKENS
-from src.utils.basic_utils import print_master, print_rank
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, RESOLUTION_MAPPING
+from vlm2vec_for_pyserini.model.processor import PHI3V, VLM_IMAGE_TOKENS
+from vlm2vec_for_pyserini.utils.basic_utils import print_master, print_rank
 from torch.utils.data import Dataset
 
 def process_image(image, resolution, max_dim=1344):

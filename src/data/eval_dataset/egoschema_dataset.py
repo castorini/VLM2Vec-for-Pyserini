@@ -1,10 +1,10 @@
 import os
 
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset
-from src.utils.vision_utils.vision_utils import process_video_frames, load_frames
-from src.model.processor import VLM_VIDEO_TOKENS
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import process_video_frames, load_frames
+from vlm2vec_for_pyserini.model.processor import VLM_VIDEO_TOKENS
 import cv2
 
 def process_query(query, prompt, video_token=''):

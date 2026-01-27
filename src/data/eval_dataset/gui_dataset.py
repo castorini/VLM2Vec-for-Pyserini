@@ -3,10 +3,10 @@ from datasets import load_dataset
 import os, ast
 
 from torch.jit import isinstance
-from src.data.dataset.gui_dataset import DATASET_PARSER_NAME
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, \
+from vlm2vec_for_pyserini.data.dataset.gui_dataset import DATASET_PARSER_NAME
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, \
     RESOLUTION_MAPPING
-from src.model.processor import PHI3V, VLM_IMAGE_TOKENS
+from vlm2vec_for_pyserini.model.processor import PHI3V, VLM_IMAGE_TOKENS
 
 
 def process_multi_images(image_basedir, image_paths) -> List[str]:

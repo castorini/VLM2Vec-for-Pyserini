@@ -49,7 +49,7 @@ from transformers.utils import (
     replace_return_docstrings,
 )
 
-from src.utils.basic_utils import print_rank
+from vlm2vec_for_pyserini.utils.basic_utils import print_rank
 from .configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLVisionConfig
 from ...utils import get_select_mask
 

@@ -14,7 +14,7 @@ from torchvision.datasets.folder import IMG_EXTENSIONS, pil_loader
 from torchvision.io import write_video
 from torchvision.utils import save_image
 
-from src.utils.vision_utils import video_transforms
+from vlm2vec_for_pyserini.utils.vision_utils import video_transforms
 
 
 VID_EXTENSIONS = (".mp4", ".avi", ".mov", ".mkv")

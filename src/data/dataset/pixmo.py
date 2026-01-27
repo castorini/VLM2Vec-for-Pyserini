@@ -6,9 +6,9 @@ import os
 
 
 from torch.jit import isinstance
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
     RESOLUTION_MAPPING
-from src.model.processor import VLM_IMAGE_TOKENS
+from vlm2vec_for_pyserini.model.processor import VLM_IMAGE_TOKENS
 
 
 QUERY_INSTRUCTION = "Retrieve documents that best answer the following query: "

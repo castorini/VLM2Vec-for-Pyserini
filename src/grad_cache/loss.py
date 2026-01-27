@@ -3,7 +3,7 @@ from torch import Tensor
 from torch.nn import functional as F
 from torch import distributed as dist
 
-from src import dist_utils
+from vlm2vec_for_pyserini import dist_utils
 
 
 class InExampleContrastiveLoss:

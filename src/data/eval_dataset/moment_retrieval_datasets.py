@@ -1,11 +1,11 @@
 import os
 
 from datasets import load_dataset
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset
-from src.utils.vision_utils.vision_utils import save_frames, process_video_frames, VID_EXTENSIONS
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import save_frames, process_video_frames, VID_EXTENSIONS
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 TASK_INST_QRY = "Find the clip that corresponds to the described scene in the given video:"
 TASK_INST_TGT = "Understand the content of the provided video."

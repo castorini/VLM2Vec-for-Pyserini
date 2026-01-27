@@ -1,11 +1,11 @@
 import os
 
 from datasets import load_dataset
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook, MULTIMODAL_FEATURES, \
     RESOLUTION_MAPPING
-from src.utils.vision_utils.vision_utils import save_frames, load_frames, sample_frames
-from src.utils.dataset_utils import sample_dataset
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import save_frames, load_frames, sample_frames
+from vlm2vec_for_pyserini.utils.dataset_utils import sample_dataset
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 
 TASK_INST_QRY = "Find a video that includes the following described scenes:"

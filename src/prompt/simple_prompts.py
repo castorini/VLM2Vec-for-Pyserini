@@ -1,4 +1,4 @@
-from src.prompt.base_prompt import AutoPrompt
+from vlm2vec_for_pyserini.prompt.base_prompt import AutoPrompt
 
 beir_all = ['trec-covid', 'arguana', 'webis-touche2020', 'scidocs', 'scifact', 'nfcorpus', 'fiqa',
             'msmarco', 'dbpedia-entity', 'fever', 'climate-fever', 'nq', 'hotpotqa', 'quora', 'cqadupstack',
