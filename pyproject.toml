@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vlm2vec_for_pyserini"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
      { name = "Ziyan Jiang", email= "ziyanjiang528@gmail.com"},
      { name = "Rui Meng", email= "memray0@gmail.com"},
@@ -29,7 +29,7 @@ dependencies = {file = ["requirements.txt"]}
 "Bug Tracker" = "https://github.com/castorini/VLM2Vec-for-Pyserini/issues"
 
 [tool.bumpver]
-current_version = "0.1.2"
+current_version = "0.1.3"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true
