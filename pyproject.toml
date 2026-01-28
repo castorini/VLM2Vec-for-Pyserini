@@ -45,16 +45,8 @@ push = false
 ]
 
 [tool.setuptools]
-packages = [
-    "vlm2vec_for_pyserini",
-]
+package-dir = { "vlm2vec_for_pyserini" = "src" }
 
-[tool.setuptools.package-dir]
-"vlm2vec_for_pyserini.pyserini_integration" = "src/pyserini_integration"
-"vlm2vec_for_pyserini.utils" = "src/utils"
-"vlm2vec_for_pyserini.data" = "src/data"
-"vlm2vec_for_pyserini.constant" = "src/constant"
-"vlm2vec_for_pyserini.model" = "src/model"
-"vlm2vec_for_pyserini.prompt" = "src/prompt"
-"vlm2vec_for_pyserini.arguments" = "src/arguments"
-"vlm2vec_for_pyserini" = "src"
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["*"]

@@ -70,8 +70,6 @@ def main():
         # Example run_filename: mmeb-visdoc-ViDoRe_arxivqa.VLM2Vec-V2.0.trec
         # Task part: ViDoRe_arxivqa
 
-        # Try to extract the task name.
-        # Pattern seems to be mmeb-visdoc-<TASK>.<MODEL>.trec
         if not run_filename.startswith("mmeb-visdoc-"):
             print(f"Skipping {run_filename}, doesn't follow expected pattern.")
             continue
@@ -79,14 +77,14 @@ def main():
         task_part = run_filename.replace("mmeb-visdoc-", "").split(".")[0]
 
         # Look for matching qrel file
-        # Expected qrel filename: qrels.mmeb-visdic-<TASK>.test.txt
+        # Expected qrel filename: qrels.mmeb-visdoc-<TASK>.test.txt
         qrel_pattern = os.path.join(
-            qrels_dir, f"qrels.mmeb-visdic-{task_part}.test.txt"
+            qrels_dir, f"qrels.mmeb-visdoc-{task_part}.test.txt"
         )
         qrel_files = glob.glob(qrel_pattern)
 
         if not qrel_files:
-            # Try a fuzzy match if exact task name doesn't work (e.g. if visdoc vs visdic is inconsistent)
+            # Try a fuzzy match if exact task name doesn't work
             print(f"Exact match failed for {task_part}, trying fuzzy search...")
             qrel_files = glob.glob(os.path.join(qrels_dir, f"*qrel*{task_part}*"))
 

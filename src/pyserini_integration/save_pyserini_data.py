@@ -183,14 +183,23 @@ def convert_parquet_to_pyserini(
             df = pd.read_parquet(qr_file)
             df = df[["query-id", "corpus-id", "score"]]
             df["q0"] = 0
-            # Set the order of the columns to query-id, q0, corpus-id, score
             df = df[["query-id", "q0", "corpus-id", "score"]]
-            # Remove duplicate rows: MMLongBench-page has duplicate qid and corpus-id pairs
-            if len(df) != len(df.drop_duplicates()):
+
+            # Keep max score per (query-id, corpus-id) without changing order
+            max_scores = df.groupby(
+                ["query-id", "corpus-id"]
+            )["score"].transform("max")
+            cleaned_df = df[df["score"] == max_scores]
+            cleaned_df = cleaned_df.drop_duplicates(
+                subset=["query-id", "corpus-id"], keep="first"
+            )
+
+            # Remove fully duplicated rows if any remain
+            if len(df) != len(cleaned_df):
                 print(
-                    f"  - Removed {len(df) - len(df.drop_duplicates())} duplicate rows from {qr_file}"
+                    f"  - Removed {len(df) - len(cleaned_df)} qid, docid duplicate pairs from {qr_file} keeping the one with the highest score"
                 )
-                df = df.drop_duplicates()
+                df = cleaned_df
             df.to_csv(qrels_path, sep="\t", index=False, header=False)
             total_qrels += len(df)
         print(f"  - Saved {total_qrels} qrels to {qrels_path}")

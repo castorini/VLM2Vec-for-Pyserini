@@ -2,12 +2,11 @@ import argparse
 import gc
 import os
 
-import numpy as np
 import torch
 import yaml
 from pyserini.encode import JsonlCollectionIterator
 from pyserini.encode.optional import FaissRepresentationWriter
-from pyserini.query_iterator import DefaultQueryIterator, MMEBQueryIterator
+from pyserini.query_iterator import MMEBQueryIterator
 from pyserini.search.faiss import FaissSearcher
 
 from vlm2vec_for_pyserini.pyserini_integration.mmeb_corpus_encoder import \
@@ -37,8 +36,8 @@ def main():
         nargs="+",
         default=[
             "Alibaba-NLP/gme-Qwen2-VL-2B-Instruct",
-            "Qwen/Qwen2-VL-2B-Instruct",
             "VLM2Vec/VLM2Vec-V2.0",
+            "code-kunkun/LamRA-Ret",
         ],
         help="List of model names to run",
     )
