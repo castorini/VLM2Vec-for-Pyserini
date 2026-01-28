@@ -8,13 +8,13 @@
 
 This repository contains a fork of the original VLM2Vec codebase, modified for easy [Pyserini](https://github.com/castorini/pyserini/) integration and repackaged as a PyPI package.
 
-`current_version = "0.0.1"`
+`current_version = "0.0.0"`
 
 ## Supported Datasets and Tasks
-All 24 Visual Document Retrieval tasks are supported. This covers `ViDoRE`  `ViDoRE v2`, `VisRAG`, `ViDoSeek` and `MMLongBench`.
+All 24 Visual Document Retrieval tasks are supported. This covers `ViDoRE`  `ViDoRE v2`, `VisRAG`, `ViDoSeek`, and `MMLongBench`.
 
 ## Supported Models
-Any models with `qwen2-vl` or `gme` backbones are supported. This includes x, y 
+Any VL models with `qwen2-vl`, `gme`, and `lamra` backbones are supported. This includes `gme-Qwen2-VL-2B/7B-Instruct`, `VLM2Vec/VLM2Vec-V2.0`, `code-kunkun/LamRA-Ret` and more. 
 
 ## Installation
 
