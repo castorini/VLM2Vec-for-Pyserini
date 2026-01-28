@@ -75,6 +75,7 @@ packages = [
     "vlm2vec_for_pyserini.utils.text_utils",
     "vlm2vec_for_pyserini.utils.vision_utils",
 ]
+include-package-data = true
 
 [tool.setuptools.package-dir]
 "vlm2vec_for_pyserini.pyserini_integration" = "src/pyserini_integration"
@@ -86,3 +87,9 @@ packages = [
 "vlm2vec_for_pyserini.arguments" = "src/arguments"
 "vlm2vec_for_pyserini" = "src"
 
+[tool.setuptools.package-data]
+"vlm2vec_for_pyserini" = [
+  "model/baseline_backbone/internvideo2/config.json",
+  "model/baseline_backbone/internvideo2/config_bert_large.json",
+  "pyserini_integration/visdoc.yaml",
+]
