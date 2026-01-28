@@ -8,7 +8,7 @@
 
 This repository contains a fork of the original VLM2Vec codebase, modified for easy [Pyserini](https://github.com/castorini/pyserini/) integration and repackaged as a PyPI package.
 
-`current_version = "0.0.0"`
+`current_version = "0.1.0"`
 
 ## Supported Datasets and Tasks
 All 24 Visual Document Retrieval tasks are supported. This covers `ViDoRE`  `ViDoRE v2`, `VisRAG`, `ViDoSeek`, and `MMLongBench`.
