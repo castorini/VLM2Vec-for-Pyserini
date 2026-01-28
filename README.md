@@ -1,4 +1,4 @@
-# VLM2Vec for Pyserini
+# VLM2Vec (MMEB) for Pyserini
 
 [![PyPI](https://img.shields.io/pypi/v/vlm2vec_for_pyserini?color=brightgreen)](https://pypi.org/project/vlm2vec_for_pyserini/)
 [![Downloads](https://static.pepy.tech/personalized-badge/vlm2vec_for_pyserini?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=downloads)](https://pepy.tech/project/vlm2vec_for_pyserini)
