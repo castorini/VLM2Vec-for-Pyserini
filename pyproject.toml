@@ -45,5 +45,44 @@ push = false
 ]
 
 [tool.setuptools]
-package-dir = { "vlm2vec_for_pyserini" = "src" }
-packages = ["vlm2vec_for_pyserini"]
+packages = [
+    "vlm2vec_for_pyserini",
+    "vlm2vec_for_pyserini.constant",
+    "vlm2vec_for_pyserini.data",
+    "vlm2vec_for_pyserini.data.collator",
+    "vlm2vec_for_pyserini.data.dataset",
+    "vlm2vec_for_pyserini.data.eval_dataset",
+    "vlm2vec_for_pyserini.data.loader",
+    "vlm2vec_for_pyserini.grad_cache",
+    "vlm2vec_for_pyserini.grad_cache.cachex",
+    "vlm2vec_for_pyserini.model",
+    "vlm2vec_for_pyserini.model.baseline_backbone",
+    "vlm2vec_for_pyserini.model.baseline_backbone.colpali",
+    "vlm2vec_for_pyserini.model.baseline_backbone.gme",
+    "vlm2vec_for_pyserini.model.baseline_backbone.internvideo2",
+    "vlm2vec_for_pyserini.model.baseline_backbone.lamra",
+    "vlm2vec_for_pyserini.model.baseline_backbone.llava_next",
+    "vlm2vec_for_pyserini.model.baseline_backbone.phi3_v",
+    "vlm2vec_for_pyserini.model.vlm_backbone",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection",
+    "vlm2vec_for_pyserini.prompt",
+    "vlm2vec_for_pyserini.pyserini_integration",
+    "vlm2vec_for_pyserini.utils",
+    "vlm2vec_for_pyserini.utils.eval_utils",
+    "vlm2vec_for_pyserini.utils.text_utils",
+    "vlm2vec_for_pyserini.utils.vision_utils",
+]
+
+[tool.setuptools.package-dir]
+"vlm2vec_for_pyserini.pyserini_integration" = "src/pyserini_integration"
+"vlm2vec_for_pyserini.utils" = "src/utils"
+"vlm2vec_for_pyserini.data" = "src/data"
+"vlm2vec_for_pyserini.constant" = "src/constant"
+"vlm2vec_for_pyserini.model" = "src/model"
+"vlm2vec_for_pyserini.prompt" = "src/prompt"
+"vlm2vec_for_pyserini.arguments" = "src/arguments"
+"vlm2vec_for_pyserini" = "src"
+
