@@ -1,10 +1,14 @@
-from vlm2vec_for_pyserini.pyserini_integration.mmeb_base_encoder import MMEBBaseEncoder
 from typing import List
-from torch.utils.data import DataLoader
-from vlm2vec_for_pyserini.data.collator.eval_collator import MultimodalEvalDataCollator
-from datasets.distributed import split_dataset_by_node
-import torch.distributed as dist
+
 import torch
+import torch.distributed as dist
+from datasets.distributed import split_dataset_by_node
+from torch.utils.data import DataLoader
+
+from vlm2vec_for_pyserini.data.collator.eval_collator import \
+    MultimodalEvalDataCollator
+from vlm2vec_for_pyserini.pyserini_integration.mmeb_base_encoder import \
+    MMEBBaseEncoder
 
 
 class QueryEncoder(MMEBBaseEncoder):

@@ -1,8 +1,8 @@
 import argparse
+import glob
+import json
 import os
 import subprocess
-import json
-import glob
 from pathlib import Path
 
 
@@ -104,7 +104,7 @@ def main():
             metrics = parse_trec_eval_output(output)
             # Use run name to avoid collisions in the same directory
             run_name = run_filename.replace(".trec", "")
-            metrics_file = run_name + ".metrics.json"
+            metrics_file = os.path.join(results_dir, run_name + ".metrics.json")
             with open(metrics_file, "w") as f:
                 json.dump(metrics, f, indent=4)
             print(f"Saved metrics to {metrics_file}")

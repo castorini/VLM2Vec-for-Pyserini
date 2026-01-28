@@ -1,7 +1,8 @@
 import argparse
-import os
-import json
 import glob
+import json
+import os
+
 import pandas as pd
 
 

@@ -1,37 +1,30 @@
-import torch
-import torch.distributed as dist
-from abc import ABC, abstractmethod
-import os
-from transformers import AutoConfig
 import datetime
+import os
+import random
 import sys
 import time
-import random
-import numpy as np
-from torch.utils.data import DataLoader
-from datasets import Dataset, concatenate_datasets
-from tqdm import tqdm
-import torch.nn.functional as F
-from vlm2vec_for_pyserini.utils.basic_utils import (
-    batch_to_device,
-    print_rank,
-    print_master,
-)
-from vlm2vec_for_pyserini.data.eval_dataset.vidore_dataset import (
-    VidoreDatasetForPyserini,
-)
-from vlm2vec_for_pyserini.data.eval_dataset.visrag_dataset import (
-    VisragDatasetForPyserini,
-)
-from vlm2vec_for_pyserini.arguments import DataArguments, ModelArguments
-from vlm2vec_for_pyserini.model.model import MMEBModel
-from vlm2vec_for_pyserini.model.processor import (
-    get_backbone_name,
-    load_processor,
-    COLPALI,
-)
-from vlm2vec_for_pyserini.utils.basic_utils import print_rank, print_master
+from abc import ABC, abstractmethod
 from typing import Any
+
+import numpy as np
+import torch
+import torch.distributed as dist
+import torch.nn.functional as F
+from datasets import Dataset, concatenate_datasets
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from transformers import AutoConfig
+
+from vlm2vec_for_pyserini.arguments import DataArguments, ModelArguments
+from vlm2vec_for_pyserini.data.eval_dataset.vidore_dataset import \
+    VidoreDatasetForPyserini
+from vlm2vec_for_pyserini.data.eval_dataset.visrag_dataset import \
+    VisragDatasetForPyserini
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.model.processor import (COLPALI, get_backbone_name,
+                                                  load_processor)
+from vlm2vec_for_pyserini.utils.basic_utils import (batch_to_device,
+                                                    print_master, print_rank)
 
 
 class MMEBBaseEncoder(ABC):

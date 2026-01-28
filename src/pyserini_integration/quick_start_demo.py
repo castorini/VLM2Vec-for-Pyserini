@@ -1,15 +1,19 @@
+import argparse
+import gc
+import os
+
+import numpy as np
+import torch
+import yaml
 from pyserini.encode import JsonlCollectionIterator
 from pyserini.encode.optional import FaissRepresentationWriter
-from pyserini.query_iterator import DefaultQueryIterator
+from pyserini.query_iterator import DefaultQueryIterator, MMEBQueryIterator
 from pyserini.search.faiss import FaissSearcher
-from pyserini.query_iterator import MMEBQueryIterator
-import argparse
-import yaml
-import os
-import numpy as np
 
-from vlm2vec_for_pyserini.pyserini_integration.mmeb_corpus_encoder import CorpusEncoder
-from vlm2vec_for_pyserini.pyserini_integration.mmeb_query_encoder import QueryEncoder
+from vlm2vec_for_pyserini.pyserini_integration.mmeb_corpus_encoder import \
+    CorpusEncoder
+from vlm2vec_for_pyserini.pyserini_integration.mmeb_query_encoder import \
+    QueryEncoder
 
 
 def main():
@@ -55,6 +59,8 @@ def main():
         model_type = None
         if "gme" in model_name.lower():
             model_type = "gme"
+        elif "lamra" in model_name.lower():
+            model_type = "lamra"
         model_suffix = model_name.split("/")[-1]
         for dataset_name in dataset_names:
             output_dir = f"{base_dir}/results"
@@ -79,8 +85,8 @@ def main():
                 fields=MMEB_CORPUS_FIELDS,
                 docid_field="corpus_id",
             )
-
-            dimension = 1536
+            # get the dimension from the model config file
+            dimension = mmeb_corpus_encoder.model.config.hidden_size
             embedding_writer = FaissRepresentationWriter(
                 f"{base_dir}/indexes/{dataset_name}.{model_suffix}", dimension=dimension
             )
@@ -95,6 +101,9 @@ def main():
                     print(f"Embeddings shape: {embeddings.shape}")
                     batch_info["vector"] = embeddings
                     embedding_writer.write(batch_info, MMEB_CORPUS_FIELDS)
+            del mmeb_corpus_encoder
+            gc.collect()
+            torch.cuda.empty_cache()
 
             # Searching Step
             mmeb_query_encoder = QueryEncoder(
@@ -129,6 +138,10 @@ def main():
 
                 hits = searcher.search(query_data, k=1000)
                 results[qid] = [(hit.docid, hit.score) for hit in hits]
+            del mmeb_query_encoder
+            del searcher
+            gc.collect()
+            torch.cuda.empty_cache()
 
             # save the results in trec format
             with open(

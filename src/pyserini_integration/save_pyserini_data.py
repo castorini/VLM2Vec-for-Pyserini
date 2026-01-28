@@ -1,11 +1,12 @@
-import os
 import argparse
 import glob
-import yaml
-import pandas as pd
-from tqdm import tqdm
-from concurrent.futures import ProcessPoolExecutor
 import hashlib
+import os
+from concurrent.futures import ProcessPoolExecutor
+
+import pandas as pd
+import yaml
+from tqdm import tqdm
 
 
 def get_suffix(dataset_name):

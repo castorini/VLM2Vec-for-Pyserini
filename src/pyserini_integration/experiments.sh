@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-BASE_DIR="/u6/s8sharif/MMEB-V2/visdoc-tasks/pyserini" # <-- Change this to your base directory
+BASE_DIR="./MMEB-V2/visdoc-tasks/pyserini" # <-- Change this to your base directory
 VISDOC_YAML="visdoc.yaml"
 PYTHON_SCRIPT="quick_start_demo.py"
 EVAL_SCRIPT="evaluate_results.py"
