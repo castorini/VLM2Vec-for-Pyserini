@@ -3,7 +3,6 @@ import glob
 import json
 import os
 import subprocess
-from pathlib import Path
 
 
 def run_trec_eval(qrel_path, run_path):

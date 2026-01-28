@@ -46,7 +46,4 @@ push = false
 
 [tool.setuptools]
 package-dir = { "vlm2vec_for_pyserini" = "src" }
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["*"]
+packages = ["vlm2vec_for_pyserini"]
