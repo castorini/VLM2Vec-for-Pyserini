@@ -10,20 +10,16 @@ from vlm2vec_for_pyserini.data.collator.eval_collator import \
 from vlm2vec_for_pyserini.pyserini_integration.mmeb_base_encoder import \
     MMEBBaseEncoder
 
-
 class QueryEncoder(MMEBBaseEncoder):
     def __init__(
         self,
         model_name: str,
         model_type: str,
-        dataset_name: str,
         pooling="eos",
         l2_norm=False,
         device="cuda:0",
     ):
         super().__init__(model_name, model_type, pooling, l2_norm, device)
-        self.dataset_class = self._get_dataset_class(dataset_name)
-
     def encode(
         self,
         qid: List[int] | int,
@@ -53,7 +49,7 @@ class QueryEncoder(MMEBBaseEncoder):
         dataset_kwargs = {
             "model_backbone": self.model_backbone,
         }
-        full_eval_qry_dataset = self.dataset_class.topics_prepare(
+        full_eval_qry_dataset = self.dataset_class.topics_dataset(
             batch_dict, **dataset_kwargs
         )
         eval_qry_dataset = full_eval_qry_dataset

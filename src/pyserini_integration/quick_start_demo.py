@@ -73,7 +73,6 @@ def main():
             mmeb_corpus_encoder = CorpusEncoder(
                 model_name=model_name,
                 model_type=model_type,
-                dataset_name=dataset_name,
                 pooling="eos",
                 l2_norm=True,
                 device="cuda:0",
@@ -108,7 +107,6 @@ def main():
             mmeb_query_encoder = QueryEncoder(
                 model_name=model_name,
                 model_type=model_type,
-                dataset_name=dataset_name,
                 pooling="eos",
                 l2_norm=True,
                 device="cuda:0",

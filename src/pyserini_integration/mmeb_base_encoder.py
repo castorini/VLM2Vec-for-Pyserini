@@ -16,15 +16,12 @@ from tqdm import tqdm
 from transformers import AutoConfig
 
 from vlm2vec_for_pyserini.arguments import DataArguments, ModelArguments
-from vlm2vec_for_pyserini.data.eval_dataset.vidore_dataset import \
-    VidoreDatasetForPyserini
-from vlm2vec_for_pyserini.data.eval_dataset.visrag_dataset import \
-    VisragDatasetForPyserini
 from vlm2vec_for_pyserini.model.model import MMEBModel
 from vlm2vec_for_pyserini.model.processor import (COLPALI, get_backbone_name,
                                                   load_processor)
 from vlm2vec_for_pyserini.utils.basic_utils import (batch_to_device,
                                                     print_master, print_rank)
+from vlm2vec_for_pyserini.pyserini_integration.visdoc_dataset import VisDocDatasetForPyserini
 
 
 class MMEBBaseEncoder(ABC):
@@ -36,6 +33,7 @@ class MMEBBaseEncoder(ABC):
         l2_norm=False,
         device="cuda:0",
     ):
+        self.dataset_class = VisDocDatasetForPyserini
         if "RANK" in os.environ and dist.is_available() and not dist.is_initialized():
             dist.init_process_group(
                 backend="nccl", timeout=datetime.timedelta(minutes=60)
@@ -99,19 +97,6 @@ class MMEBBaseEncoder(ABC):
         self.device = device
         self.model = model.to(self.device)
         self.processor = processor
-
-    def _get_dataset_class(self, dataset_name):
-        dataset_type_to_class = {
-            "vidore": VidoreDatasetForPyserini,
-            "visrag": VisragDatasetForPyserini,
-            # vidoseek and mmlongbench are using the same dataset parser as vidore.
-            "vidoseek": VidoreDatasetForPyserini,
-            "mmlongbench": VidoreDatasetForPyserini,
-        }
-        for dataset_type, dataset_class in dataset_type_to_class.items():
-            if dataset_type in dataset_name.lower():
-                return dataset_class
-        raise ValueError(f"Dataset {dataset_name} not supported")
 
     # Copied from `pad_dataset_to_divisible` function defined in eval.py since eval.py is outside of the src directory and it will not be part of the vlm2vec_for_pyserini package.
     def pad_dataset_to_divisible(self, dataset, world_size):

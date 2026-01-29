@@ -16,14 +16,12 @@ class CorpusEncoder(MMEBBaseEncoder):
         self,
         model_name: str,
         model_type: str,
-        dataset_name: str,
         image_resolution: str | None = None,
         pooling="eos",
         l2_norm=False,
         device="cuda:0",
     ):
         super().__init__(model_name, model_type, pooling, l2_norm, device)
-        self.dataset_class = self._get_dataset_class(dataset_name)
         self.image_resolution = image_resolution
 
     def encode(
@@ -52,7 +50,7 @@ class CorpusEncoder(MMEBBaseEncoder):
             "image_resolution": self.image_resolution,
             "model_backbone": self.model_backbone,
         }
-        full_eval_cand_dataset = self.dataset_class.corpus_prepare(
+        full_eval_cand_dataset = self.dataset_class.corpus_dataset(
             batch_dict, **dataset_kwargs
         )
         eval_cand_dataset = full_eval_cand_dataset
