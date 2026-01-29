@@ -24,6 +24,6 @@ timm
 torch==2.9.1 # pinning this makes flash-attn installation easier, compatible with flash-attn 2.8.3
 torchvision
 tqdm
-transformers==4.57.6 # The code depends on HybridCache which is removed in later versions.
+transformers==4.51.3 # gme models only work with this version.
 wandb
 wrapt
