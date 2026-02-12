@@ -16,10 +16,10 @@ import os
 import torch
 import math
 
-from src.data.collator.train_collator import split_vlm_inputs, get_dense_rep, split_and_process_vlm_inputs
-from src.model.model import MMEBModel
-from src.loss import SimpleContrastiveLoss, DistributedContrastiveLoss
-from src.grad_cache.grad_cache import GradCache
+from vlm2vec_for_pyserini.data.collator.train_collator import split_vlm_inputs, get_dense_rep, split_and_process_vlm_inputs
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.loss import SimpleContrastiveLoss, DistributedContrastiveLoss
+from vlm2vec_for_pyserini.grad_cache.grad_cache import GradCache
 from torch.utils.data import DataLoader, Dataset, IterableDataset, RandomSampler, SequentialSampler
 
 from transformers.training_args import OptimizerNames, ParallelMode, TrainingArguments
@@ -48,8 +48,8 @@ from transformers.utils import (
     ADAPTER_WEIGHTS_NAME, ADAPTER_SAFE_WEIGHTS_NAME
 )
 
-from src.utils.basic_utils import batch_to_device
-from src.utils.basic_utils import print_master, print_rank
+from vlm2vec_for_pyserini.utils.basic_utils import batch_to_device
+from vlm2vec_for_pyserini.utils.basic_utils import print_master, print_rank
 
 if is_apex_available():
     from apex import amp

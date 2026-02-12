@@ -1,6 +1,6 @@
-from src.model import MMEBModel
-from src.arguments import ModelArguments
-from src.utils.basic_utils import load_processor
+from vlm2vec_for_pyserini.model import MMEBModel
+from vlm2vec_for_pyserini.arguments import ModelArguments
+from vlm2vec_for_pyserini.utils.basic_utils import load_processor
 
 import torch
 from transformers import HfArgumentParser, AutoProcessor

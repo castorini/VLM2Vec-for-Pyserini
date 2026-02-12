@@ -14,13 +14,13 @@ import torch
 import wandb
 import yaml
 from transformers import HfArgumentParser
-from src.arguments import ModelArguments, DataArguments, TrainingArguments
-from src.data.collator.train_collator import MultimodalDataCollator
-from src.data.loader.mixed_dataset import init_mixed_dataset
-from src.model.model import MMEBModel
-from src.trainer import GradCacheLateProcessTrainer
-from src.utils.basic_utils import print_rank, print_master, find_latest_checkpoint
-from src.model.processor import load_processor, get_backbone_name
+from vlm2vec_for_pyserini.arguments import ModelArguments, DataArguments, TrainingArguments
+from vlm2vec_for_pyserini.data.collator.train_collator import MultimodalDataCollator
+from vlm2vec_for_pyserini.data.loader.mixed_dataset import init_mixed_dataset
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.trainer import GradCacheLateProcessTrainer
+from vlm2vec_for_pyserini.utils.basic_utils import print_rank, print_master, find_latest_checkpoint
+from vlm2vec_for_pyserini.model.processor import load_processor, get_backbone_name
 
 
 def main():

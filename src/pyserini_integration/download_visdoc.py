@@ -1,6 +1,7 @@
 import argparse
-from huggingface_hub import snapshot_download
 import os
+
+from huggingface_hub import snapshot_download
 
 
 def main():

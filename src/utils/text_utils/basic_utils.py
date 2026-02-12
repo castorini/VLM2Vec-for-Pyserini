@@ -9,7 +9,7 @@ import re
 
 import torch
 from time import time
-from src.utils.text_utils.logging import get_logger
+from vlm2vec_for_pyserini.utils.text_utils.logging import get_logger
 from contextlib import contextmanager
 from timeit import default_timer
 

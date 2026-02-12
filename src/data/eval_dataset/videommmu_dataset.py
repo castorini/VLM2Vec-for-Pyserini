@@ -2,10 +2,10 @@ import os
 
 from datasets import load_dataset
 
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook
-from src.utils.dataset_utils import sample_dataset
-from src.utils.vision_utils.vision_utils import process_video_frames, load_frames, qa_template
-from src.model.processor import VLM_VIDEO_TOKENS
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook
+from vlm2vec_for_pyserini.utils.dataset_utils import sample_dataset
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import process_video_frames, load_frames, qa_template
+from vlm2vec_for_pyserini.model.processor import VLM_VIDEO_TOKENS
 import datasets
 import cv2
 

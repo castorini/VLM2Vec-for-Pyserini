@@ -1,8 +1,8 @@
-from src.arguments import ModelArguments
+from vlm2vec_for_pyserini.arguments import ModelArguments
 from transformers import HfArgumentParser, AutoProcessor
 
-from src.model.model import MMEBModel
-from src.model.processor import get_backbone_name, load_processor
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.model.processor import get_backbone_name, load_processor
 
 
 def main():

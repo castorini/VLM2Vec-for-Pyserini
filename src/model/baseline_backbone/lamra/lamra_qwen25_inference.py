@@ -11,8 +11,8 @@ from torch.utils.data import DataLoader
 from tqdm.autonotebook import tqdm
 from transformers import AutoConfig
 
-from src.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
-from src.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLProcessor
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLProcessor
 
 
 class LamRAQwen25VL(nn.Module):

@@ -9,9 +9,9 @@ from collections import defaultdict
 
 import datasets
 import numpy as np
-from src.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook
-from src.prompt.base_prompt import AutoPrompt
-from src.utils.text_utils.normalize_text import normalize
+from vlm2vec_for_pyserini.data.dataset.base_pair_dataset import AutoPairDataset, add_metainfo_hook
+from vlm2vec_for_pyserini.prompt.base_prompt import AutoPrompt
+from vlm2vec_for_pyserini.utils.text_utils.normalize_text import normalize
 
 CLUSTER_NAME2LABELS = {
     "medrxiv": [t.lower() for t in ["Addiction Medicine", "Allergy and Immunology", "Anesthesia", "Cardiovascular Medicine", "Dentistry and Oral Medicine", "Dermatology", "Emergency Medicine",

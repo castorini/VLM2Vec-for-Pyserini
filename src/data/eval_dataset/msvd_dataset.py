@@ -1,10 +1,10 @@
 import os
 
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset
-from src.utils.vision_utils.vision_utils import save_frames, process_video_frames
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import save_frames, process_video_frames
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 
 TASK_INST_QRY = "Find the video snippet that corresponds to the given summary:"

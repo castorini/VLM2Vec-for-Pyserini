@@ -1,10 +1,11 @@
 import os
 import hashlib
+from datasets import Dataset
 
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset, load_qrels_mapping
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING, ImageVideoInstance
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset, load_qrels_mapping
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 
 TASK_INST_QRY = "Find a document image that matches the given query:"
@@ -109,3 +110,4 @@ def load_visrag_dataset(model_args, data_args, **kwargs):
     dataset = dataset.select_columns(["query_text", "query_image", "cand_text", "cand_image", "dataset_infos"])
 
     return dataset, corpus
+

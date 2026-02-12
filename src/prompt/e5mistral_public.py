@@ -2,7 +2,7 @@ import copy
 import random
 from typing import Dict
 
-from src.prompt.base_prompt import AutoPrompt
+from vlm2vec_for_pyserini.prompt.base_prompt import AutoPrompt
 
 
 @AutoPrompt.register("e5mistral")

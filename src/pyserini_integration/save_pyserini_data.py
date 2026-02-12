@@ -1,10 +1,19 @@
-import os
 import argparse
 import glob
-import yaml
-import pandas as pd
-from tqdm import tqdm
+import hashlib
+import os
 from concurrent.futures import ProcessPoolExecutor
+
+import pandas as pd
+import yaml
+from tqdm import tqdm
+
+
+def get_suffix(dataset_name):
+    # VisRAG-RET-test datasets only have train parquet files
+    if "visrag" in dataset_name.lower():
+        return "train"
+    return "test"
 
 
 def find_parquets(directory):
@@ -14,8 +23,9 @@ def find_parquets(directory):
     """
     pattern = os.path.join(directory, "*.parquet")
     files = glob.glob(pattern)
-    files = [f for f in files if "train" not in f]
-    # files = [f for f in files if "test" in f]
+    # VisRAG testdatasets only have train parquet files, so we should not filter them out.
+    if not "visrag" in directory.lower():
+        files = [f for f in files if "train" not in f]
     print(f"Found {len(files)} parquet files in {directory}")
     print(f"Files: {files}")
     return sorted(files)
@@ -24,9 +34,17 @@ def find_parquets(directory):
 def convert_parquet_to_pyserini(
     data_basedir, data_root, image_root, dataset_name, output_dir, query_subset=None
 ):
+    def process_columns(df):
+        # Convert all the values in the columns with -id in their columnnames to strings
+        for col in df.columns:
+            if "-id" in col:
+                df[col] = df[col].astype(str)
+        # Replace - with _ in all column names
+        df.columns = df.columns.str.replace("-", "_")
+        return df
+
     def process_images(df, data_basedir, image_root, output_dir):
         print(f"Processing images for df of size {len(df)} and columns {df.columns}")
-        original_image_root = os.path.join(data_basedir, image_root)
         if "image" not in df.columns:
             return df
 
@@ -56,15 +74,26 @@ def convert_parquet_to_pyserini(
 
             obj_id = str(row[id_col])
             # The user specified qid.png (which we generalize to id.png)
-            img_path = os.path.join(original_image_root, f"{obj_id}.png")
+            # img_path = os.path.join(original_image_root, f"{obj_id}.png")
             # assert os.path.exists(img_path), f"Image path {img_path} does not exist for df data: {row.to_dict()}"
-            new_img_path = os.path.join(output_dir, image_root, f"{obj_id}.png")
+            if "visrag" in dataset_name.lower():
+                # image names are used as object ids, and some of them are super long...
+                base, _ = os.path.splitext(obj_id)
+                short_base = (
+                    base[:50]
+                    + "_"
+                    + hashlib.md5(obj_id.encode("utf-8")).hexdigest()[:8]
+                )  # Truncate base, add original filename hash
+                new_img_path = os.path.join(output_dir, image_root, f"{short_base}.png")
+            else:
+                new_img_path = os.path.join(output_dir, image_root, f"{obj_id}.png")
             os.makedirs(os.path.dirname(new_img_path), exist_ok=True)
             with open(new_img_path, "wb") as f:
                 f.write(img_bytes)
             return new_img_path
 
-        df["image"] = df.apply(validate_and_replace, axis=1)
+        df["image_path"] = df.apply(validate_and_replace, axis=1)
+        df.drop(columns=["image"], inplace=True)
         return df
 
     data_dir = os.path.join(data_basedir, data_root)
@@ -81,18 +110,27 @@ def convert_parquet_to_pyserini(
 
     topics_output_dir = os.path.join(output_dir, "topics")
     os.makedirs(topics_output_dir, exist_ok=True)
-    topics_path = os.path.join(topics_output_dir, f"mmeb_visdoc_{dataset_name}.jsonl")
+    topics_path = os.path.join(
+        topics_output_dir,
+        f"topics.mmeb-visdoc-{dataset_name}.{get_suffix(dataset_name)}.jsonl",
+    )
 
     with open(topics_path, "w", encoding="utf-8") as f_out:
         total_queries = 0
         for q_file in query_files:
             df = pd.read_parquet(q_file)
             df = process_images(df, data_basedir, image_root, topics_output_dir)
+            df = process_columns(df)
             if query_subset:
                 df = df[df["language"] == query_subset]
-            json_str = df.to_json(orient="records", lines=True, force_ascii=False)
+            df = df.rename(columns={"query_id": "qid"})
+            json_str = df.to_json(
+                orient="records",
+                lines=True,
+                force_ascii=False,
+            )
             if json_str:
-                f_out.write(json_str + "\n")
+                f_out.write(json_str.strip().replace("\\/", "/") + "\n")
             total_queries += len(df)
         print(f"  - Saved {total_queries} queries to {topics_path}")
 
@@ -113,9 +151,14 @@ def convert_parquet_to_pyserini(
         for c_file in corpus_files:
             df = pd.read_parquet(c_file)
             df = process_images(df, data_basedir, image_root, corpus_output_dir)
-            json_str = df.to_json(orient="records", lines=True, force_ascii=False)
+            df = process_columns(df)
+            json_str = df.to_json(
+                orient="records",
+                lines=True,
+                force_ascii=False,
+            )
             if json_str:
-                f_out.write(json_str + "\n")
+                f_out.write(json_str.strip().replace("\\/", "/") + "\n")
             total_docs += len(df)
         print(f"  - Saved {total_docs} documents to {corpus_path}")
 
@@ -129,7 +172,10 @@ def convert_parquet_to_pyserini(
 
     qrels_out_dir = os.path.join(output_dir, "qrels")
     os.makedirs(qrels_out_dir, exist_ok=True)
-    qrels_path = os.path.join(qrels_out_dir, f"mmeb_visdic_{dataset_name}.txt")
+    qrels_path = os.path.join(
+        qrels_out_dir,
+        f"qrels.mmeb-visdoc-{dataset_name}.{get_suffix(dataset_name)}.txt",
+    )
 
     with open(qrels_path, "w", encoding="utf-8") as f_out:
         total_qrels = 0
@@ -137,8 +183,23 @@ def convert_parquet_to_pyserini(
             df = pd.read_parquet(qr_file)
             df = df[["query-id", "corpus-id", "score"]]
             df["q0"] = 0
-            # Set the order of the columns to query-id, q0, corpus-id, score
             df = df[["query-id", "q0", "corpus-id", "score"]]
+
+            # Keep max score per (query-id, corpus-id) without changing order
+            max_scores = df.groupby(
+                ["query-id", "corpus-id"]
+            )["score"].transform("max")
+            cleaned_df = df[df["score"] == max_scores]
+            cleaned_df = cleaned_df.drop_duplicates(
+                subset=["query-id", "corpus-id"], keep="first"
+            )
+
+            # Remove fully duplicated rows if any remain
+            if len(df) != len(cleaned_df):
+                print(
+                    f"  - Removed {len(df) - len(cleaned_df)} qid, docid duplicate pairs from {qr_file} keeping the one with the highest score"
+                )
+                df = cleaned_df
             df.to_csv(qrels_path, sep="\t", index=False, header=False)
             total_qrels += len(df)
         print(f"  - Saved {total_qrels} qrels to {qrels_path}")

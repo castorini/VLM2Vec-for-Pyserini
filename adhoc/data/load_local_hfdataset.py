@@ -1,5 +1,5 @@
-from src.constant.dataset_hflocal_path import EVAL_DATASET_HF_PATH
-from src.utils.dataset_utils import load_local_hf_dataset
+from vlm2vec_for_pyserini.constant.dataset_hflocal_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.utils.dataset_utils import load_local_hf_dataset
 
 if __name__ == "__main__":
     print("\n" + "="*20 + " Testing Local HF Dataset Loading " + "="*20)

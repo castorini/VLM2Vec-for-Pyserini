@@ -1,8 +1,8 @@
-from src.arguments import ModelArguments, DataArguments
-from src.model.model import MMEBModel
-from src.model.processor import load_processor, QWEN2_VL, VLM_VIDEO_TOKENS
+from vlm2vec_for_pyserini.arguments import ModelArguments, DataArguments
+from vlm2vec_for_pyserini.model.model import MMEBModel
+from vlm2vec_for_pyserini.model.processor import load_processor, QWEN2_VL, VLM_VIDEO_TOKENS
 import torch
-from src.model.vlm_backbone.qwen2_vl.qwen_vl_utils import process_vision_info
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.qwen_vl_utils import process_vision_info
 
 model_args = ModelArguments(
     model_name='Qwen/Qwen2-VL-7B-Instruct',

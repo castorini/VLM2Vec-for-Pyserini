@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vlm2vec_for_pyserini"
+version = "0.1.5"
+authors = [
+     { name = "Ziyan Jiang", email= "ziyanjiang528@gmail.com"},
+     { name = "Rui Meng", email= "memray0@gmail.com"},
+     { name = "Wenhu Chen", email= "wenhuchen@uwaterloo.ca"},
+     { name = "Sahel Sharifymoghaddam", email = "sahel.sharifymoghaddam@uwaterloo.ca" },
+]
+description = "Fork of the original VLM2Vec repository modified for easy and simple Pyserini integration"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+"Homepage" = "https://github.com/castorini/VLM2Vec-for-Pyserini"
+"Bug Tracker" = "https://github.com/castorini/VLM2Vec-for-Pyserini/issues"
+
+[tool.bumpver]
+current_version = "0.1.5"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "Bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"', 'version = "{version}"'
+]
+"README.md" = [
+    'current_version = "{version}"',
+]
+
+[tool.setuptools]
+packages = [
+    "vlm2vec_for_pyserini",
+    "vlm2vec_for_pyserini.constant",
+    "vlm2vec_for_pyserini.data",
+    "vlm2vec_for_pyserini.data.collator",
+    "vlm2vec_for_pyserini.data.dataset",
+    "vlm2vec_for_pyserini.data.eval_dataset",
+    "vlm2vec_for_pyserini.data.loader",
+    "vlm2vec_for_pyserini.grad_cache",
+    "vlm2vec_for_pyserini.grad_cache.cachex",
+    "vlm2vec_for_pyserini.model",
+    "vlm2vec_for_pyserini.model.baseline_backbone",
+    "vlm2vec_for_pyserini.model.baseline_backbone.colpali",
+    "vlm2vec_for_pyserini.model.baseline_backbone.gme",
+    "vlm2vec_for_pyserini.model.baseline_backbone.internvideo2",
+    "vlm2vec_for_pyserini.model.baseline_backbone.lamra",
+    "vlm2vec_for_pyserini.model.baseline_backbone.llava_next",
+    "vlm2vec_for_pyserini.model.baseline_backbone.phi3_v",
+    "vlm2vec_for_pyserini.model.vlm_backbone",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl",
+    "vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection",
+    "vlm2vec_for_pyserini.prompt",
+    "vlm2vec_for_pyserini.pyserini_integration",
+    "vlm2vec_for_pyserini.utils",
+    "vlm2vec_for_pyserini.utils.eval_utils",
+    "vlm2vec_for_pyserini.utils.text_utils",
+    "vlm2vec_for_pyserini.utils.vision_utils",
+]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"vlm2vec_for_pyserini.pyserini_integration" = "src/pyserini_integration"
+"vlm2vec_for_pyserini.utils" = "src/utils"
+"vlm2vec_for_pyserini.data" = "src/data"
+"vlm2vec_for_pyserini.constant" = "src/constant"
+"vlm2vec_for_pyserini.model" = "src/model"
+"vlm2vec_for_pyserini.prompt" = "src/prompt"
+"vlm2vec_for_pyserini.arguments" = "src/arguments"
+"vlm2vec_for_pyserini" = "src"
+
+[tool.setuptools.package-data]
+"vlm2vec_for_pyserini" = [
+  "model/baseline_backbone/internvideo2/config.json",
+  "model/baseline_backbone/internvideo2/config_bert_large.json",
+  "pyserini_integration/visdoc.yaml",
+]

@@ -13,12 +13,12 @@ from transformers import AutoTokenizer, AutoModel, DataCollatorWithPadding
 from mteb import MTEB
 
 from adhoc.eval_mteb.e5mistral_prompt import load_e5mistral_prompt
-from src.arguments import ModelArguments, DataArguments, TrainingArguments, MTEBArguments
+from vlm2vec_for_pyserini.arguments import ModelArguments, DataArguments, TrainingArguments, MTEBArguments
 from transformers import HfArgumentParser, AutoTokenizer
 
-from src.model.model import MMEBModel
+from vlm2vec_for_pyserini.model.model import MMEBModel
 from adhoc.eval_mteb.mteb_utils import logger, pool, move_to_cuda, input_transform_func, varsize_gather_nograd, is_main, str2bool
-from src.model.processor import load_processor
+from vlm2vec_for_pyserini.model.processor import load_processor
 
 # (not effective here, add them in environment variables) for clustering: OpenBLAS warning: precompiled NUM_THREADS exceeded, adding auxiliary array for thread metadata.
 default_n_threads = 1

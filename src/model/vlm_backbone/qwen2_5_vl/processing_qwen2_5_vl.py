@@ -36,9 +36,9 @@ except ImportError:
 from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack, VideosKwargs
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 
-from src.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLImageProcessor
-from src.model.vlm_backbone.qwen2_vl.tokenization_qwen2 import Qwen2Tokenizer
-from src.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import \
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLImageProcessor
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2 import Qwen2Tokenizer
+from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import \
     Qwen2TokenizerFast
 
 

@@ -1,13 +1,13 @@
 import os
 
 from datasets import load_dataset
-from src.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
-from src.utils.dataset_utils import load_hf_dataset, sample_dataset
+from vlm2vec_for_pyserini.constant.dataset_hf_path import EVAL_DATASET_HF_PATH
+from vlm2vec_for_pyserini.utils.dataset_utils import load_hf_dataset, sample_dataset
 
-from src.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING
-from src.data.eval_dataset.base_eval_dataset import ImageVideoInstance
-from src.utils.vision_utils.vision_utils import load_frames, save_frames
-from src.model.processor import process_input_text
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import AutoEvalPairDataset, add_metainfo_hook, RESOLUTION_MAPPING
+from vlm2vec_for_pyserini.data.eval_dataset.base_eval_dataset import ImageVideoInstance
+from vlm2vec_for_pyserini.utils.vision_utils.vision_utils import load_frames, save_frames
+from vlm2vec_for_pyserini.model.processor import process_input_text
 
 TASK_INST_QRY_TEXT = "Find the clip that corresponds to the given text:"
 TASK_INST_QRY_IMG = "Select the video clip that aligns with the given text and image:"

@@ -1,7 +1,7 @@
 # import faiss
 import numpy as np
 import hnswlib
-from src.utils.basic_utils import print_rank
+from vlm2vec_for_pyserini.utils.basic_utils import print_rank
 
 # class FAISSIndex:
 #     """
