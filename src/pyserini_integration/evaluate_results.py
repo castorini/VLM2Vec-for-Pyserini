@@ -57,7 +57,7 @@ def main():
         "--benchmark_prefix",
         type=str,
         required=True,
-        help="Prefix of the benchmark, e.g. mmeb-visdoc, m-beir, etc" 
+        help="Prefix of the benchmark, e.g. mmeb-visdoc, m-beir, etc",
     )
     args = parser.parse_args()
 
@@ -79,11 +79,15 @@ def main():
         # or run_filename: run.mmeb-visdoc-ViDoRe_arxivqa.VLM2Vec-V2.0.txt
         # Task part: ViDoRe_arxivqa
 
-        if not run_filename.startswith(benchmark_prefix) and not run_filename.startswith("run." + benchmark_prefix):
+        if not run_filename.startswith(
+            benchmark_prefix
+        ) and not run_filename.startswith("run." + benchmark_prefix):
             print(f"Skipping {run_filename}, doesn't follow expected pattern.")
             continue
 
-        task_part = run_filename.replace("run.", "").replace(benchmark_prefix, "").split(".")[0]
+        task_part = (
+            run_filename.replace("run.", "").replace(benchmark_prefix, "").split(".")[0]
+        )
         # Look for matching qrel file
         # Expected qrel filename: qrels.mmeb-visdoc-<TASK>.test.txt
         qrel_pattern = os.path.join(
@@ -95,7 +99,7 @@ def main():
             # Try a fuzzy match if exact task name doesn't work
             print(f"Exact match failed for {task_part}, trying fuzzy search...")
             qrel_files = glob.glob(os.path.join(qrels_dir, f"*qrel*{task_part}*"))
-        
+
         if not qrel_files:
             task_part_underscore = task_part.replace("-", "_")
             qrel_pattern = os.path.join(
