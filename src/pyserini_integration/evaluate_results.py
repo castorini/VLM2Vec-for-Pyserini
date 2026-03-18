@@ -48,37 +48,50 @@ def main():
         "--results_dir",
         type=str,
         required=True,
-        help="Directory containing .trec files",
+        help="Directory containing .trec or .txt files",
     )
     parser.add_argument(
         "--qrels_dir", type=str, required=True, help="Directory containing qrel files"
+    )
+    parser.add_argument(
+        "--benchmark_prefix",
+        type=str,
+        required=True,
+        help="Prefix of the benchmark, e.g. mmeb-visdoc, m-beir, etc",
     )
     args = parser.parse_args()
 
     results_dir = os.path.abspath(args.results_dir)
     qrels_dir = os.path.abspath(args.qrels_dir)
 
+    # .trec or .txt files only
     trec_files = glob.glob(os.path.join(results_dir, "*.trec"))
+    trec_files.extend(glob.glob(os.path.join(results_dir, "*.txt")))
 
     if not trec_files:
-        print(f"No .trec files found in {results_dir}")
+        print(f"No .trec or .txt files found in {results_dir}")
         return
 
+    benchmark_prefix = args.benchmark_prefix + "-"
     for run_path in trec_files:
         run_filename = os.path.basename(run_path)
         # Example run_filename: mmeb-visdoc-ViDoRe_arxivqa.VLM2Vec-V2.0.trec
+        # or run_filename: run.mmeb-visdoc-ViDoRe_arxivqa.VLM2Vec-V2.0.txt
         # Task part: ViDoRe_arxivqa
 
-        if not run_filename.startswith("mmeb-visdoc-"):
+        if not run_filename.startswith(
+            benchmark_prefix
+        ) and not run_filename.startswith("run." + benchmark_prefix):
             print(f"Skipping {run_filename}, doesn't follow expected pattern.")
             continue
 
-        task_part = run_filename.replace("mmeb-visdoc-", "").split(".")[0]
-
+        task_part = (
+            run_filename.replace("run.", "").replace(benchmark_prefix, "").split(".")[0]
+        )
         # Look for matching qrel file
         # Expected qrel filename: qrels.mmeb-visdoc-<TASK>.test.txt
         qrel_pattern = os.path.join(
-            qrels_dir, f"qrels.mmeb-visdoc-{task_part}.test.txt"
+            qrels_dir, f"qrels.{benchmark_prefix}{task_part}.test.txt"
         )
         qrel_files = glob.glob(qrel_pattern)
 
@@ -86,6 +99,13 @@ def main():
             # Try a fuzzy match if exact task name doesn't work
             print(f"Exact match failed for {task_part}, trying fuzzy search...")
             qrel_files = glob.glob(os.path.join(qrels_dir, f"*qrel*{task_part}*"))
+
+        if not qrel_files:
+            task_part_underscore = task_part.replace("-", "_")
+            qrel_pattern = os.path.join(
+                qrels_dir, f"qrels.{benchmark_prefix}{task_part_underscore}.test.txt"
+            )
+            qrel_files = glob.glob(qrel_pattern)
 
         if not qrel_files:
             print(
@@ -100,7 +120,7 @@ def main():
         if output:
             metrics = parse_trec_eval_output(output)
             # Use run name to avoid collisions in the same directory
-            run_name = run_filename.replace(".trec", "")
+            run_name = run_filename.replace(".trec", "").replace(".txt", "")
             metrics_file = os.path.join(results_dir, run_name + ".metrics.json")
             with open(metrics_file, "w") as f:
                 json.dump(metrics, f, indent=4)

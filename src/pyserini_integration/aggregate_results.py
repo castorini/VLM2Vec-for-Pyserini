@@ -38,14 +38,13 @@ def main():
 
     for file_path in metrics_files:
         filename = os.path.basename(file_path)
-        # Expected pattern: mmeb-visdoc-<TASK>.<MODEL>.trec.metrics.json
+        # Expected pattern: (run.)mmeb-visdoc-<TASK>.<MODEL>.metrics.json
         # Based on examples: mmeb-visdoc-VisRAG_MP-DocVQA.VLM2Vec-V2.0.metrics.json
-
         try:
             # Remove the prefix
-            core_name = filename.replace("mmeb-visdoc-", "")
+            core_name = filename.replace("run.", "").replace("mmeb-visdoc-", "")
             # Remove the suffix
-            core_name = core_name.replace(".trec.metrics.json", "")
+            core_name = core_name.replace(".metrics.json", "")
 
             parts = core_name.split(".")
             if len(parts) < 2:

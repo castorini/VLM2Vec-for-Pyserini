@@ -75,15 +75,11 @@ VisRAG_PlotQA:
     data_root: data/VisRAG-Ret-Test-PlotQA
     image_root: images/VisRAG_PlotQA
 
+
 ViDoSeek-page:
-    data_root: data/ViDoSeek-page
-    image_root: images/ViDoSeek-page
-ViDoSeek-doc:
-    data_root: data/ViDoSeek
-    image_root: images/ViDoSeek
-MMLongBench-doc:
-    data_root: data/MMLongBench-doc
-    image_root: images/MMLongBench-doc
+    data_root: data/ViDoSeek-page-fixed
+    image_root: images/ViDoSeek-page-fixed
+
 MMLongBench-page:
-    data_root: data/MMLongBench
-    image_root: images/MMLongBench-page
+    data_root: data/MMLongBench-page-fixed
+    image_root: images/MMLongBench-page-fixed

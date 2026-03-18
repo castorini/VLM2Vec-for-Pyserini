@@ -37,7 +37,6 @@ def main():
         default=[
             "Alibaba-NLP/gme-Qwen2-VL-2B-Instruct",
             "VLM2Vec/VLM2Vec-V2.0",
-            "code-kunkun/LamRA-Ret",
         ],
         help="List of model names to run",
     )
