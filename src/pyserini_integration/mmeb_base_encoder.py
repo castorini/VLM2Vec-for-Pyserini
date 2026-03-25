@@ -58,7 +58,10 @@ class MMEBBaseEncoder(ABC):
                 sys.argv.append("--local_rank")
                 sys.argv.append(rank)
         # --- Model Loading ---
-        hf_config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+        try:
+            hf_config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+        except (ImportError, OSError):
+            hf_config = AutoConfig.from_pretrained(model_name, trust_remote_code=False)
         self.model_backbone = get_backbone_name(
             hf_config=hf_config, model_type=model_type
         )

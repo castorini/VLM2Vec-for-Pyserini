@@ -21,9 +21,9 @@ scikit-learn
 scipy
 sentencepiece
 timm
-torch==2.9.1 # pinning this makes flash-attn installation easier, compatible with flash-attn 2.8.3
+torch>=2.9.1 # flash-attn 2.8.3+ requires torch>=2.9.1
 torchvision
 tqdm
-transformers==4.51.3 # gme models only work with this version.
+transformers>=4.57,<5 # 4.57+ required to be compatible with pyserini; <5 to avoid breaking changes in transformers 5.x
 wandb
 wrapt
