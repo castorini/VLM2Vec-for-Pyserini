@@ -17,7 +17,10 @@ from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLForCondition
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection import \
     Qwen2VLForConditionalGeneration as Qwen2VLTokenSelectionForConditionalGeneration, \
     Qwen2VLProcessor as Qwen2VLTokenSelectionProcessor
-from vlm2vec_for_pyserini.model.baseline_backbone.internvideo2.modeling_internvideo2 import InternVideo2_Stage2
+try:
+    from vlm2vec_for_pyserini.model.baseline_backbone.internvideo2.modeling_internvideo2 import InternVideo2_Stage2
+except ImportError:
+    InternVideo2_Stage2 = None
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection import \
     Qwen2_5_VLForConditionalGeneration as Qwen2_5_VL_TokenSelectionForConditionalGeneration

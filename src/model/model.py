@@ -20,8 +20,11 @@ from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import 
 from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
 
 from transformers import modeling_utils
+from transformers.utils import is_flash_attn_2_available
 if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARALLEL_STYLES is None:
     modeling_utils.ALL_PARALLEL_STYLES = ["tp", "none", "colwise", 'rowwise']
+
+_ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
 
 
 class MMEBModel(nn.Module):
@@ -123,7 +126,10 @@ class MMEBModel(nn.Module):
 
     @classmethod
     def build(cls, model_args: ModelArguments, **kwargs):
-        config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
+        try:
+            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
+        except (ImportError, OSError):
+            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
         model_backbone = get_backbone_name(hf_config=config)
         print_master(f'Loading backbone [{model_backbone}] from {model_args.model_name}')
         # Loading the base model
@@ -147,7 +153,7 @@ class MMEBModel(nn.Module):
                 low_cpu_mem_usage=True,
             )
         elif model_backbone in [QWEN2_VL, QWEN2_5_VL]:
-            config._attn_implementation = "flash_attention_2"
+            config._attn_implementation = _ATTN_IMPLEMENTATION
             config.padding_side = "left"
             config.use_cache = False
             base_model = backbone2model[model_backbone].from_pretrained(
@@ -157,7 +163,7 @@ class MMEBModel(nn.Module):
                 low_cpu_mem_usage=True,
             )
         elif model_backbone in [QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION]:
-            config._attn_implementation = "flash_attention_2"
+            config._attn_implementation = _ATTN_IMPLEMENTATION
             config.padding_side = "left"
             config.use_cache = False
 
@@ -215,15 +221,23 @@ class MMEBModel(nn.Module):
     def load(cls, model_args: ModelArguments, is_trainable=True, **kwargs):
         # Loading the base model
         model_name_or_path = model_args.checkpoint_path if model_args.checkpoint_path else model_args.model_name
-        config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+        try:
+            config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+        except (ImportError, OSError):
+            # Some models (e.g., GME) enforce strict transformers version checks in remote code.
+            # Fall back to loading without remote code since we use our own vendored model classes.
+            config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=False)
         if not hasattr(model_args, "model_backbone") or not model_args.model_backbone:
             model_backbone = get_backbone_name(hf_config=config, model_type=model_args.model_type)
             setattr(model_args, 'model_backbone', model_backbone)
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
-            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
-            config._attn_implementation = "flash_attention_2"
-            config.vision_config._attn_implementation = "flash_attention_2"
+            try:
+                config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
+            except (ImportError, OSError):
+                config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
+            config._attn_implementation = _ATTN_IMPLEMENTATION
+            config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
             base_model = backbone2model[model_args.model_backbone].from_pretrained(
                 model_args.model_name,
                 torch_dtype=torch.bfloat16,
