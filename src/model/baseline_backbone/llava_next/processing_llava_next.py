@@ -21,7 +21,13 @@ from typing import List, Union
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_processing_utils import select_best_resolution
 from transformers.image_utils import ImageInput, get_image_size, to_numpy_array
-from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack, _validate_images_text_input_order
+from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
+try:
+    from transformers.processing_utils import _validate_images_text_input_order
+except ImportError:
+    # Removed in transformers>=4.55
+    def _validate_images_text_input_order(images, text):
+        return images, text
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 
