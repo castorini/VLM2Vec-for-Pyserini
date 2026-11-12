@@ -22,12 +22,6 @@ from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_processing_utils import select_best_resolution
 from transformers.image_utils import ImageInput, get_image_size, to_numpy_array
 from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
-try:
-    from transformers.processing_utils import _validate_images_text_input_order
-except ImportError:
-    # Removed in transformers>=4.55
-    def _validate_images_text_input_order(images, text):
-        return images, text
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 
@@ -135,9 +129,6 @@ class LlavaNextProcessor(ProcessorMixin):
         """
         if images is None and text is None:
             raise ValueError("You have to specify at least images or text.")
-        # check if images and text inputs are reversed for BC
-        images, text = _validate_images_text_input_order(images, text)
-
         output_kwargs = self._merge_kwargs(
             LlavaNextProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,

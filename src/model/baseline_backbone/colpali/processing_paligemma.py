@@ -27,12 +27,6 @@ from transformers.processing_utils import (
     TextKwargs,
     Unpack,
 )
-try:
-    from transformers.processing_utils import _validate_images_text_input_order
-except ImportError:
-    # Removed in transformers>=4.55
-    def _validate_images_text_input_order(images, text):
-        return images, text
 from transformers.tokenization_utils_base import (
     AddedToken,
     PreTokenizedInput,
@@ -220,9 +214,6 @@ class PaliGemmaProcessor(ProcessorMixin):
             - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
             - **labels** -- Labels compatible with training if `suffix` is not None
         """
-        # check if images and text inputs are reversed for BC
-        images, text = _validate_images_text_input_order(images, text)
-
         output_kwargs = self._merge_kwargs(
             PaliGemmaProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
