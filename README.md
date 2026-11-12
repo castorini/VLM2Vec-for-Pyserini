@@ -32,11 +32,7 @@ cd VLM2Vec-for-Pyserini
 pip install .
 ```
 
-The package works with `transformers` 4.51.3 through 5.x, so it can be installed alongside current Pyserini (which requires `transformers>=5`).
-Two dependencies are optional extras:
-
-- `flash`: [FlashAttention-2](https://github.com/Dao-AILab/flash-attention) (CUDA only). Without it the Qwen2-VL backbones use PyTorch SDPA attention, which gives near-identical but not bit-identical scores. Install it to reproduce the published 2CR numbers exactly: `pip install 'vlm2vec-for-pyserini[flash]'`.
-- `video`: `decord`, only needed for the video benchmarks: `pip install 'vlm2vec-for-pyserini[video]'`.
+Optional extras: `[flash]` installs [FlashAttention-2](https://github.com/Dao-AILab/flash-attention) (CUDA only; needed to reproduce the 2CR numbers exactly, otherwise SDPA is used), and `[video]` installs `decord` for the video benchmarks.
 
 ## Quick Start
 Assuming that you have cloned the repository and you are in the root dir:

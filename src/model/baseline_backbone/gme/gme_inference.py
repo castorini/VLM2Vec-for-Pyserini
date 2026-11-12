@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm.autonotebook import tqdm
-from transformers import AutoProcessor, AutoConfig
+from transformers import AutoProcessor
 from transformers.utils import is_flash_attn_2_available
 
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLForConditionalGeneration
@@ -32,9 +32,6 @@ class GmeQwen2VL(nn.Module):
         # self.base = AutoModelForVision2Seq.from_pretrained(
         #     model_name, torch_dtype=torch.bfloat16, **kwargs
         # )
-        # Load the config with the vendored Qwen2VLConfig that matches the vendored model below. GME's own
-        # remote config code pins transformers<4.52, and transformers' built-in Qwen2VLConfig (>=5) nests
-        # the text-model fields under `text_config`, which the vendored model does not read.
         config = Qwen2VLForConditionalGeneration.config_class.from_pretrained(model_name)
         config._attn_implementation = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
         config.padding_side = "left"

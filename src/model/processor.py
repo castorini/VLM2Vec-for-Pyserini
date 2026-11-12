@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import logging
-from collections.abc import Mapping
 
 import PIL
 from transformers.image_utils import ChannelDimension
@@ -12,12 +11,6 @@ logger = logging.getLogger(__name__)
 import torch
 import numpy as np
 from vlm2vec_for_pyserini.utils.basic_utils import print_master
-
-# Backbone model classes are imported lazily (see `backbone2model` below). Each backbone vendors
-# its own copy of model code written against a particular transformers release; importing all of
-# them eagerly meant that one backbone breaking under a new transformers version (or needing an
-# optional dependency such as flash-attn) made the whole package unimportable, including for the
-# backbones that work fine.
 
 
 PHI_IMAGE_TOKEN_MAX_INPUT_ID = int(1e9)
@@ -97,21 +90,12 @@ _BACKBONE_MODEL_PATHS = {
 }
 
 
-class _LazyBackboneMap(Mapping):
-    """Maps a backbone name to its model class, importing the class on first access."""
-
-    def __init__(self, paths):
-        self._paths = paths
+class _LazyBackboneMap(dict):
+    """Imports backbone model classes on first access."""
 
     def __getitem__(self, backbone):
-        module_name, class_name = self._paths[backbone]
+        module_name, class_name = super().__getitem__(backbone)
         return getattr(importlib.import_module(module_name), class_name)
-
-    def __iter__(self):
-        return iter(self._paths)
-
-    def __len__(self):
-        return len(self._paths)
 
 
 backbone2model = _LazyBackboneMap(_BACKBONE_MODEL_PATHS)
@@ -141,7 +125,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone in [QWEN2_VL, GME, LamRA]:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.processing_qwen2_vl import Qwen2VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.image_processing_qwen2_vl import Qwen2VLImageProcessor
-        from transformers import Qwen2TokenizerFast  # see note in processing_qwen2_vl.py
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels
@@ -155,7 +139,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone == QWEN2_VL_TOKENSELECTION:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.processing_qwen2_vl import Qwen2VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.image_processing_qwen2_vl import Qwen2VLImageProcessor
-        from transformers import Qwen2TokenizerFast  # see note in processing_qwen2_vl.py
+        from transformers import Qwen2TokenizerFast
         image_processor = Qwen2VLImageProcessor.from_pretrained(model_name_or_path)
         if data_args is not None:
             image_processor.do_resize = data_args.resize_use_processor
@@ -172,7 +156,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone in [QWEN2_5_VL, LamRA_QWEN2_5]:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl.processing_qwen2_5_vl import Qwen2_5_VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl.image_processing_qwen2_5_vl import Qwen2_5_VLImageProcessor
-        from transformers import Qwen2TokenizerFast  # see note in processing_qwen2_vl.py
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels
@@ -184,7 +168,7 @@ def load_processor(model_args, data_args=None):
         # TODO: qwen2.5 token selection not working yet
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection.processing_qwen2_5_vl import Qwen2_5_VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection.image_processing_qwen2_5_vl import Qwen2_5_VLImageProcessor
-        from transformers import Qwen2TokenizerFast  # see note in processing_qwen2_vl.py
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels

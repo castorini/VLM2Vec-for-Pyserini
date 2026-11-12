@@ -12,10 +12,6 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 from vlm2vec_for_pyserini.arguments import ModelArguments
 from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, get_backbone_name, print_master, QWEN2_5_VL, INTERNVIDEO2, \
     QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI
-# Backbone-specific model classes are imported inside `build`/`load`, only for the backbone in use,
-# so that a backbone that does not support the installed transformers version (or needs an optional
-# dependency) does not prevent the other backbones from loading. See `backbone2model`.
-
 from transformers import modeling_utils
 from transformers.utils import is_flash_attn_2_available
 if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARALLEL_STYLES is None:
@@ -25,7 +21,6 @@ _ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "
 
 
 def _load_adapter_config(model_name_or_path):
-    """Return the PEFT adapter config if `model_name_or_path` is an adapter checkpoint, else None."""
     from peft import PeftConfig
     try:
         return PeftConfig.from_pretrained(model_name_or_path)
@@ -232,8 +227,6 @@ class MMEBModel(nn.Module):
         try:
             config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
         except (ImportError, OSError):
-            # Some models (e.g., GME) enforce strict transformers version checks in remote code.
-            # Fall back to loading without remote code since we use our own vendored model classes.
             config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=False)
         if not hasattr(model_args, "model_backbone") or not model_args.model_backbone:
             model_backbone = get_backbone_name(hf_config=config, model_type=model_args.model_type)
@@ -241,10 +234,7 @@ class MMEBModel(nn.Module):
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
             if model_args.model_backbone == QWEN2_VL:
-                # Use the vendored config class that matches the vendored model. AutoConfig returns
-                # transformers' own Qwen2VLConfig, which in transformers>=5 nests the text-model fields
-                # (hidden_size, rope_scaling, pad_token_id, ...) under `text_config` and no longer exposes
-                # them at the top level where the vendored model reads them. Same values on transformers<5.
+                # transformers>=5's Qwen2VLConfig nests text fields under `text_config`
                 config = backbone2model[QWEN2_VL].config_class.from_pretrained(model_args.model_name)
             else:
                 try:
@@ -255,35 +245,21 @@ class MMEBModel(nn.Module):
             config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
             model_cls = backbone2model[model_args.model_backbone]
             adapter_config = _load_adapter_config(model_args.model_name) if model_args.model_backbone == QWEN2_VL else None
+            base_model = model_cls.from_pretrained(
+                adapter_config.base_model_name_or_path if adapter_config else model_args.model_name,
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                config=config
+            )
             if adapter_config is not None:
-                # The checkpoint is a PEFT adapter (e.g. VLM2Vec/VLM2Vec-V2.0, a DoRA adapter on Qwen2-VL-2B).
-                # Load the base model and attach the adapter with PEFT itself rather than relying on
-                # transformers' implicit adapter loading: transformers>=5 has its own adapter loader that does
-                # not translate older PEFT key names, so the DoRA magnitude vectors
-                # (`...lora_magnitude_vector.default`) are reported as missing and silently re-initialised.
-                # PEFT's loader handles them; transformers<5 delegated to it, so results are unchanged there.
-                base_model = model_cls.from_pretrained(
-                    adapter_config.base_model_name_or_path,
-                    torch_dtype=torch.bfloat16,
-                    low_cpu_mem_usage=True,
-                    config=config
-                )
+                # Attach with PEFT: transformers>=5's adapter loader drops older DoRA magnitude keys.
                 base_model = PeftModel.from_pretrained(
                     base_model, model_args.model_name, config=adapter_config, is_trainable=is_trainable
                 )
-                # PEFT keeps adapter weights in float32, whereas transformers' adapter loading stored them in the
-                # model dtype. Cast them to bf16 to match how the published (transformers<5) results were produced.
-                # Only the adapter parameters: a whole-model `.to()` would also round the float32 RoPE buffers.
+                # Keep adapter weights in bf16, as transformers' adapter loading did.
                 for name, param in base_model.named_parameters():
                     if "lora_" in name:
                         param.data = param.data.to(torch.bfloat16)
-            else:
-                base_model = model_cls.from_pretrained(
-                    model_args.model_name,
-                    torch_dtype=torch.bfloat16,
-                    low_cpu_mem_usage=True,
-                    config=config
-                )
         elif model_args.model_backbone == PHI3V:
             config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
             config.use_cache = False

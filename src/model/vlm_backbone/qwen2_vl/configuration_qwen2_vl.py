@@ -46,7 +46,6 @@ class Qwen2VLVisionConfig(PretrainedConfig):
     ):
         super().__init__(**kwargs)
 
-        # transformers>=5 runs `_init_weights` on the vision tower with this config, which reads it.
         self.initializer_range = initializer_range
         self.depth = depth
         self.embed_dim = embed_dim
@@ -259,8 +258,7 @@ class Qwen2VLConfig(PretrainedConfig):
             self.rope_scaling["rope_type"] = self.rope_scaling["type"]
         rope_config_validation(self, ignore_keys={"mrope_section"})
 
-        # transformers<5's PretrainedConfig always defined these (default None); transformers>=5 only sets
-        # them when given, and Qwen2VLModel reads `config.pad_token_id`. Keep the old defaults.
+        # transformers<5 always defined these
         for token_id_name in ("pad_token_id", "bos_token_id", "eos_token_id"):
             kwargs.setdefault(token_id_name, None)
 

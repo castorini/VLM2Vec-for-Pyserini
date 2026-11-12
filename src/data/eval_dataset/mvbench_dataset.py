@@ -11,8 +11,6 @@ import os
 from PIL import Image
 import numpy as np
 import cv2
-# decord is imported lazily in read_video(): it is only needed for this video benchmark, and importing it at
-# module level made decord (no macOS/arm64 wheels) a hard requirement for every image/text use of the package.
 
 
 def process_query(query, prompt, video_token=''):

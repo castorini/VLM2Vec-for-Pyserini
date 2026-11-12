@@ -20,8 +20,6 @@
 """
 Processor class for Qwen2-VL.
 """
-from builtins import NotImplementedError
-
 from typing import List, Union
 
 from transformers.feature_extraction_utils import BatchFeature
@@ -36,9 +34,7 @@ from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpa
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 from .image_processing_qwen2_vl import Qwen2VLImageProcessor
-# The vendored tokenization_qwen2*.py files are unmodified copies of transformers 4.51's Qwen2 tokenizers.
-# Under transformers>=5 the vendored fast tokenizer silently loses its BPE merges/pre-tokenizer and
-# tokenizes character by character, so use transformers' own classes (same behaviour on 4.x).
+# The vendored Qwen2 tokenizers tokenize character by character under transformers>=5.
 from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 logger = logging.get_logger(__name__)
@@ -86,8 +82,6 @@ class Qwen2VLProcessor(ProcessorMixin):
         elif module_name == 'Qwen2TokenizerFast':
             return Qwen2TokenizerFast
         else:
-            # transformers>=5 also asks for generic base classes here (e.g. the image processor / tokenizer
-            # base class used for type checking); defer those to the default lookup.
             return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __call__(
