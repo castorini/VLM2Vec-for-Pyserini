@@ -12,12 +12,9 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 from vlm2vec_for_pyserini.arguments import ModelArguments
 from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, get_backbone_name, print_master, QWEN2_5_VL, INTERNVIDEO2, \
     QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI
-from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPali
-from vlm2vec_for_pyserini.model.baseline_backbone.gme.gme_inference import GmeQwen2VL
-from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_inference import LamRAQwen2VL
-from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_qwen25_inference import LamRAQwen25VL
-from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
-from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
+# Backbone-specific model classes are imported inside `build`/`load`, only for the backbone in use,
+# so that a backbone that does not support the installed transformers version (or needs an optional
+# dependency) does not prevent the other backbones from loading. See `backbone2model`.
 
 from transformers import modeling_utils
 from transformers.utils import is_flash_attn_2_available
@@ -25,6 +22,15 @@ if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARA
     modeling_utils.ALL_PARALLEL_STYLES = ["tp", "none", "colwise", 'rowwise']
 
 _ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
+
+
+def _load_adapter_config(model_name_or_path):
+    """Return the PEFT adapter config if `model_name_or_path` is an adapter checkpoint, else None."""
+    from peft import PeftConfig
+    try:
+        return PeftConfig.from_pretrained(model_name_or_path)
+    except (ValueError, OSError):
+        return None
 
 
 class MMEBModel(nn.Module):
@@ -137,6 +143,7 @@ class MMEBModel(nn.Module):
             config._attn_implementation = "eager"
             config.padding_side = "right"
             config.use_cache = False
+            from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
             base_model = Phi3VForCausalLM.from_pretrained(
                 model_args.model_name,
                 config=config,
@@ -146,6 +153,7 @@ class MMEBModel(nn.Module):
         elif model_backbone == LLAVA_NEXT:
             config.use_cache = False
             config.padding_side = "left"
+            from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
             base_model = LlavaNextForConditionalGeneration.from_pretrained(
                 model_args.model_name,
                 config=config,
@@ -232,22 +240,55 @@ class MMEBModel(nn.Module):
             setattr(model_args, 'model_backbone', model_backbone)
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
-            try:
-                config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
-            except (ImportError, OSError):
-                config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
+            if model_args.model_backbone == QWEN2_VL:
+                # Use the vendored config class that matches the vendored model. AutoConfig returns
+                # transformers' own Qwen2VLConfig, which in transformers>=5 nests the text-model fields
+                # (hidden_size, rope_scaling, pad_token_id, ...) under `text_config` and no longer exposes
+                # them at the top level where the vendored model reads them. Same values on transformers<5.
+                config = backbone2model[QWEN2_VL].config_class.from_pretrained(model_args.model_name)
+            else:
+                try:
+                    config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
+                except (ImportError, OSError):
+                    config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
             config._attn_implementation = _ATTN_IMPLEMENTATION
             config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
-            base_model = backbone2model[model_args.model_backbone].from_pretrained(
-                model_args.model_name,
-                torch_dtype=torch.bfloat16,
-                low_cpu_mem_usage=True,
-                config=config
-            )
+            model_cls = backbone2model[model_args.model_backbone]
+            adapter_config = _load_adapter_config(model_args.model_name) if model_args.model_backbone == QWEN2_VL else None
+            if adapter_config is not None:
+                # The checkpoint is a PEFT adapter (e.g. VLM2Vec/VLM2Vec-V2.0, a DoRA adapter on Qwen2-VL-2B).
+                # Load the base model and attach the adapter with PEFT itself rather than relying on
+                # transformers' implicit adapter loading: transformers>=5 has its own adapter loader that does
+                # not translate older PEFT key names, so the DoRA magnitude vectors
+                # (`...lora_magnitude_vector.default`) are reported as missing and silently re-initialised.
+                # PEFT's loader handles them; transformers<5 delegated to it, so results are unchanged there.
+                base_model = model_cls.from_pretrained(
+                    adapter_config.base_model_name_or_path,
+                    torch_dtype=torch.bfloat16,
+                    low_cpu_mem_usage=True,
+                    config=config
+                )
+                base_model = PeftModel.from_pretrained(
+                    base_model, model_args.model_name, config=adapter_config, is_trainable=is_trainable
+                )
+                # PEFT keeps adapter weights in float32, whereas transformers' adapter loading stored them in the
+                # model dtype. Cast them to bf16 to match how the published (transformers<5) results were produced.
+                # Only the adapter parameters: a whole-model `.to()` would also round the float32 RoPE buffers.
+                for name, param in base_model.named_parameters():
+                    if "lora_" in name:
+                        param.data = param.data.to(torch.bfloat16)
+            else:
+                base_model = model_cls.from_pretrained(
+                    model_args.model_name,
+                    torch_dtype=torch.bfloat16,
+                    low_cpu_mem_usage=True,
+                    config=config
+                )
         elif model_args.model_backbone == PHI3V:
             config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
             config.use_cache = False
             config.padding_side = "right"
+            from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
             base_model = Phi3VForCausalLM.from_pretrained(model_args.model_name, **kwargs, config=config,
                                                           torch_dtype=torch.bfloat16, trust_remote_code=True)
             base_model.padding_side = "right"
@@ -258,15 +299,19 @@ class MMEBModel(nn.Module):
             base_model = backbone2model[model_args.model_backbone].from_pretrained("src/model/vlm_backbone/internvideo2/", config=config,
                                                                                    trust_remote_code=True)
         elif model_args.model_backbone == GME:
+            from vlm2vec_for_pyserini.model.baseline_backbone.gme.gme_inference import GmeQwen2VL
             base_model = GmeQwen2VL(model_args.model_name, processor=kwargs['processor'])
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == LamRA:
+            from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_inference import LamRAQwen2VL
             base_model = LamRAQwen2VL(model_args.model_name)
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == LamRA_QWEN2_5:
+            from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_qwen25_inference import LamRAQwen25VL
             base_model = LamRAQwen25VL(model_args.model_name)
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == COLPALI:
+            from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPali
             base_model = ColPali.from_pretrained(model_args.model_name)
             setattr(base_model, 'config', config)
         else:

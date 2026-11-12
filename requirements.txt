@@ -1,8 +1,6 @@
 accelerate
 datasets
-decord
 einops
-flash-attn  # check out orginal repo README for accelerating installation: https://github.com/Dao-AILab/flash-attention
 hjson
 hnswlib
 huggingface-hub
@@ -13,8 +11,8 @@ opencv-python
 peft
 pillow
 py-cpuinfo
-pytrec-eval
-qwen-vl-utils[decord]==0.0.8  # https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct/discussions/30
+pytrec-eval-terrier  # maintained fork of pytrec-eval with prebuilt wheels; same `pytrec_eval` module
+qwen-vl-utils==0.0.8  # https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct/discussions/30 (decord: see the `video` extra)
 ray
 scikit-image
 scikit-learn
@@ -24,6 +22,6 @@ timm
 torch>=2.9.1 # flash-attn 2.8.3+ requires torch>=2.9.1
 torchvision
 tqdm
-transformers>=4.57,<5 # 4.57+ required to be compatible with pyserini; <5 to avoid breaking changes in transformers 5.x
+transformers>=4.51.3,<6 # verified on 4.51.3 and 5.x; current pyserini requires transformers>=5
 wandb
 wrapt

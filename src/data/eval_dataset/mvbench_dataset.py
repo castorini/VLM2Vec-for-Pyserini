@@ -11,7 +11,8 @@ import os
 from PIL import Image
 import numpy as np
 import cv2
-from decord import VideoReader, cpu
+# decord is imported lazily in read_video(): it is only needed for this video benchmark, and importing it at
+# module level made decord (no macOS/arm64 wheels) a hard requirement for every image/text use of the package.
 
 
 def process_query(query, prompt, video_token=''):
@@ -60,6 +61,7 @@ def get_index(bound, fps, max_frame, num_segments, first_idx=0):
     return frame_indices
 
 def read_video(transform, video_path, bound=None):
+    from decord import VideoReader, cpu
     vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
     max_frame = len(vr) - 1
     fps = float(vr.get_avg_fps())

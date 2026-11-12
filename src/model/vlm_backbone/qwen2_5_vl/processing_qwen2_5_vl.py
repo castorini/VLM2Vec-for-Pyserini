@@ -37,9 +37,8 @@ from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpa
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLImageProcessor
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2 import Qwen2Tokenizer
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import \
-    Qwen2TokenizerFast
+# See note in qwen2_vl/processing_qwen2_vl.py: use transformers' own Qwen2 tokenizers.
+from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 
 class Qwen2_5_VLVideosProcessorKwargs(VideosKwargs, total=False):
@@ -91,7 +90,9 @@ class Qwen2_5_VLProcessor(ProcessorMixin):
         elif module_name == 'Qwen2TokenizerFast':
             return Qwen2TokenizerFast
         else:
-            raise NotImplementedError
+            # transformers>=5 also asks for generic base classes here (e.g. the image processor / tokenizer
+            # base class used for type checking); defer those to the default lookup.
+            return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __call__(
         self,

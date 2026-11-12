@@ -21,6 +21,14 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
+[project.optional-dependencies]
+# FlashAttention-2 (CUDA only, built from source). Without it the Qwen2-VL backbones fall back to SDPA,
+# which gives near-identical but not bit-identical scores; install it to reproduce published 2CR numbers exactly.
+# See https://github.com/Dao-AILab/flash-attention for faster installation.
+flash = ["flash-attn"]
+# Video decoding, only needed for the video benchmarks (no macOS/arm64 wheels).
+video = ["decord", "qwen-vl-utils[decord]==0.0.8"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 

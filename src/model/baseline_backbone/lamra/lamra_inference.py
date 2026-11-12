@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm.autonotebook import tqdm
-from transformers import AutoModelForVision2Seq, AutoProcessor, AutoConfig
+from transformers import AutoProcessor, AutoConfig
 from transformers.utils import is_flash_attn_2_available
 
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLForConditionalGeneration

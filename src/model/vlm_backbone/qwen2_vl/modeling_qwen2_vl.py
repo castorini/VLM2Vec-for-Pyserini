@@ -46,6 +46,12 @@ from transformers.utils import (
 )
 from .configuration_qwen2_vl import Qwen2VLConfig, Qwen2VLVisionConfig
 
+import transformers as _transformers
+from packaging import version as _version
+
+# transformers>=5 changed several PreTrainedModel conventions this vendored copy relies on.
+_TRANSFORMERS_V5 = _version.parse(_transformers.__version__).major >= 5
+
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_varlen_func
 
@@ -99,8 +105,12 @@ class PatchEmbed(nn.Module):
 class VisionRotaryEmbedding(nn.Module):
     def __init__(self, dim: int, theta: float = 10000.0) -> None:
         super().__init__()
-        inv_freq = 1.0 / (theta ** (torch.arange(0, dim, 2, dtype=torch.float) / dim))
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self.dim = dim
+        self.theta = theta
+        self.register_buffer("inv_freq", self.compute_inv_freq(), persistent=False)
+
+    def compute_inv_freq(self, device=None) -> torch.Tensor:
+        return 1.0 / (self.theta ** (torch.arange(0, self.dim, 2, dtype=torch.float, device=device) / self.dim))
 
     def forward(self, seqlen: int) -> torch.Tensor:
         seq = torch.arange(seqlen, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
@@ -319,6 +329,18 @@ class Qwen2VLPreTrainedModel(PreTrainedModel):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
+        # RoPE frequencies are non-persistent buffers (never in checkpoints). transformers>=5 instantiates
+        # models on the meta device and relies on `_init_weights` to (re)compute such buffers; without this
+        # they are left as zeros, which silently turns every rotary embedding into the identity.
+        # Recomputing them here is deterministic, so it is a no-op change for transformers<5.
+        elif isinstance(module, VisionRotaryEmbedding):
+            with torch.no_grad():
+                module.inv_freq.copy_(module.compute_inv_freq())
+        elif isinstance(module, Qwen2VLRotaryEmbedding):
+            with torch.no_grad():
+                inv_freq, module.attention_scaling = module.rope_init_fn(module.config)
+                module.inv_freq.copy_(inv_freq)
+            module.original_inv_freq = module.inv_freq
 
 
 class Qwen2VisionTransformerPretrainedModel(Qwen2VLPreTrainedModel):
@@ -407,6 +429,21 @@ class Qwen2VisionTransformerPretrainedModel(Qwen2VLPreTrainedModel):
         return self.merger(hidden_states)
 
 
+def _compute_default_rope_parameters(config, device=None, seq_len=None, **rope_kwargs):
+    """Plain (unscaled) RoPE inverse frequencies.
+
+    Copied from transformers 4.51 `modeling_rope_utils._compute_default_rope_parameters`; transformers>=5
+    no longer registers a "default" entry in `ROPE_INIT_FUNCTIONS`, and Qwen2-VL's M-RoPE uses this one.
+    """
+    base = config.rope_theta
+    partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+    head_dim = getattr(config, "head_dim", None) or config.hidden_size // config.num_attention_heads
+    dim = int(head_dim * partial_rotary_factor)
+    attention_factor = 1.0  # Unused in this type of RoPE
+    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.int64).to(device=device, dtype=torch.float) / dim))
+    return inv_freq, attention_factor
+
+
 class Qwen2VLRotaryEmbedding(nn.Module):
     def __init__(self, config: Qwen2VLConfig, device=None):
         super().__init__()
@@ -419,7 +456,10 @@ class Qwen2VLRotaryEmbedding(nn.Module):
         self.original_max_seq_len = config.max_position_embeddings
 
         self.config = config
-        self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
+        if self.rope_type == "default":
+            self.rope_init_fn = _compute_default_rope_parameters
+        else:
+            self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
 
         inv_freq, self.attention_scaling = self.rope_init_fn(self.config, device)
         self.register_buffer("inv_freq", inv_freq, persistent=False)
@@ -738,6 +778,9 @@ class Qwen2VLFlashAttention2(Qwen2VLAttention):
         else:
             sliding_window = None
 
+        # transformers>=5 picks the flash kernel from `attn_implementation` and raises if it is not given
+        # (its own models always pass it); older versions do not take this argument.
+        flash_kwargs = {"attn_implementation": "flash_attention_2"} if _TRANSFORMERS_V5 else {}
         attn_output = _flash_attention_forward(
             query_states,
             key_states,
@@ -748,6 +791,7 @@ class Qwen2VLFlashAttention2(Qwen2VLAttention):
             sliding_window=sliding_window,
             is_causal=self.is_causal,
             use_top_left_mask=self._flash_attn_uses_top_left_mask,
+            **flash_kwargs,
         )
 
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
@@ -1357,7 +1401,10 @@ QWEN2_VL_INPUTS_DOCSTRING = r"""
 
 
 class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
-    _tied_weights_keys = ["lm_head.weight"]
+    # transformers>=5 expects {tied_param: source_param}; older versions expect a list of tied params.
+    _tied_weights_keys = (
+        {"lm_head.weight": "model.embed_tokens.weight"} if _TRANSFORMERS_V5 else ["lm_head.weight"]
+    )
 
     def __init__(self, config):
         super().__init__(config)

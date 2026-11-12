@@ -36,8 +36,10 @@ from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpa
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 from .image_processing_qwen2_vl import Qwen2VLImageProcessor
-from .tokenization_qwen2 import Qwen2Tokenizer
-from .tokenization_qwen2_fast import Qwen2TokenizerFast
+# The vendored tokenization_qwen2*.py files are unmodified copies of transformers 4.51's Qwen2 tokenizers.
+# Under transformers>=5 the vendored fast tokenizer silently loses its BPE merges/pre-tokenizer and
+# tokenizes character by character, so use transformers' own classes (same behaviour on 4.x).
+from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 logger = logging.get_logger(__name__)
 
@@ -84,7 +86,9 @@ class Qwen2VLProcessor(ProcessorMixin):
         elif module_name == 'Qwen2TokenizerFast':
             return Qwen2TokenizerFast
         else:
-            raise NotImplementedError
+            # transformers>=5 also asks for generic base classes here (e.g. the image processor / tokenizer
+            # base class used for type checking); defer those to the default lookup.
+            return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __call__(
         self,
