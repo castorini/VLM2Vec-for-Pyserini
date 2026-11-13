@@ -12,7 +12,6 @@ from tqdm.autonotebook import tqdm
 from transformers import AutoProcessor
 from transformers.utils import is_flash_attn_2_available
 
-from vlm2vec_for_pyserini.model.processor import load_hf_config
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLForConditionalGeneration
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLProcessor
 
@@ -30,7 +29,7 @@ class LamRAQwen2VL(nn.Module):
     ) -> None:
         super().__init__()
         model_name = model_path or model_name
-        config = load_hf_config(model_name)
+        config = Qwen2VLForConditionalGeneration.config_class.from_pretrained(model_name)
         config._attn_implementation = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
         config.padding_side = "left"
         config.use_cache = False
