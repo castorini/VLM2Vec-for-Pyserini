@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 from tqdm.autonotebook import tqdm
-from transformers import AutoConfig
+from transformers.utils import is_flash_attn_2_available
 
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLProcessor
@@ -28,8 +28,8 @@ class LamRAQwen25VL(nn.Module):
     ) -> None:
         super().__init__()
         model_name = model_path or model_name
-        config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
-        config._attn_implementation = "flash_attention_2"
+        config = Qwen2_5_VLForConditionalGeneration.config_class.from_pretrained(model_name)
+        config._attn_implementation = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
         config.padding_side = "left"
         config.use_cache = False
 

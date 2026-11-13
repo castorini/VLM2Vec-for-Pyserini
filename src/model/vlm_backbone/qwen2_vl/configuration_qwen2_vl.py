@@ -41,10 +41,12 @@ class Qwen2VLVisionConfig(PretrainedConfig):
         patch_size=14,
         spatial_merge_size=2,
         temporal_patch_size=2,
+        initializer_range=0.02,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
+        self.initializer_range = initializer_range
         self.depth = depth
         self.embed_dim = embed_dim
         self.hidden_size = hidden_size
@@ -255,6 +257,10 @@ class Qwen2VLConfig(PretrainedConfig):
                 self.rope_scaling["type"] = "default"
             self.rope_scaling["rope_type"] = self.rope_scaling["type"]
         rope_config_validation(self, ignore_keys={"mrope_section"})
+
+        # PretrainedConfig no longer defaults these, but the model code reads them
+        for token_id_name in ("pad_token_id", "bos_token_id", "eos_token_id"):
+            kwargs.setdefault(token_id_name, None)
 
         super().__init__(tie_word_embeddings=tie_word_embeddings, **kwargs)
 

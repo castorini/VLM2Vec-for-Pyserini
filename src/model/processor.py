@@ -1,26 +1,16 @@
+from __future__ import annotations
+
+import importlib
 import logging
 
 import PIL
 from transformers.image_utils import ChannelDimension
-
-from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPaliProcessor
 
 logger = logging.getLogger(__name__)
 
 import torch
 import numpy as np
 from vlm2vec_for_pyserini.utils.basic_utils import print_master
-
-from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
-from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection import \
-    Qwen2VLForConditionalGeneration as Qwen2VLTokenSelectionForConditionalGeneration, \
-    Qwen2VLProcessor as Qwen2VLTokenSelectionProcessor
-from vlm2vec_for_pyserini.model.baseline_backbone.internvideo2.modeling_internvideo2 import InternVideo2_Stage2
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLForConditionalGeneration
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection import \
-    Qwen2_5_VLForConditionalGeneration as Qwen2_5_VL_TokenSelectionForConditionalGeneration
 
 
 PHI_IMAGE_TOKEN_MAX_INPUT_ID = int(1e9)
@@ -85,16 +75,38 @@ VLM_VIDEO_TOKENS = {
     E5_V: "<image>",
 }
 
-backbone2model = {
-    PHI3V: Phi3VForCausalLM,
-    LLAVA_NEXT: LlavaNextForConditionalGeneration,
-    QWEN2_VL: Qwen2VLForConditionalGeneration,
-    QWEN2_5_VL: Qwen2_5_VLForConditionalGeneration,
-    QWEN2_VL_TOKENSELECTION: Qwen2VLTokenSelectionForConditionalGeneration,
-    QWEN2_5_VL_TOKENSELECTION: Qwen2_5_VL_TokenSelectionForConditionalGeneration,
-    INTERNVIDEO2: InternVideo2_Stage2,
-    E5_V: LlavaNextForConditionalGeneration,
+_BACKBONE_MODEL_PATHS = {
+    PHI3V: ("vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v", "Phi3VForCausalLM"),
+    LLAVA_NEXT: ("vlm2vec_for_pyserini.model.baseline_backbone.llava_next", "LlavaNextForConditionalGeneration"),
+    QWEN2_VL: ("vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl", "Qwen2VLForConditionalGeneration"),
+    QWEN2_5_VL: ("vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl", "Qwen2_5_VLForConditionalGeneration"),
+    QWEN2_VL_TOKENSELECTION: ("vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection",
+                              "Qwen2VLForConditionalGeneration"),
+    QWEN2_5_VL_TOKENSELECTION: ("vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection",
+                                "Qwen2_5_VLForConditionalGeneration"),
+    INTERNVIDEO2: ("vlm2vec_for_pyserini.model.baseline_backbone.internvideo2.modeling_internvideo2",
+                   "InternVideo2_Stage2"),
+    E5_V: ("vlm2vec_for_pyserini.model.baseline_backbone.llava_next", "LlavaNextForConditionalGeneration"),
 }
+
+
+class _LazyBackboneMap(dict):
+    """Imports backbone model classes on first access."""
+
+    def __getitem__(self, backbone):
+        module_name, class_name = super().__getitem__(backbone)
+        return getattr(importlib.import_module(module_name), class_name)
+
+
+backbone2model = _LazyBackboneMap(_BACKBONE_MODEL_PATHS)
+
+
+def load_hf_config(model_name_or_path):
+    from transformers import AutoConfig
+    try:
+        return AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+    except (ImportError, OSError):
+        return AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=False)
 
 
 def load_processor(model_args, data_args=None):
@@ -121,7 +133,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone in [QWEN2_VL, GME, LamRA]:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.processing_qwen2_vl import Qwen2VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.image_processing_qwen2_vl import Qwen2VLImageProcessor
-        from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import Qwen2TokenizerFast
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels
@@ -135,7 +147,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone == QWEN2_VL_TOKENSELECTION:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.processing_qwen2_vl import Qwen2VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.image_processing_qwen2_vl import Qwen2VLImageProcessor
-        from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.tokenization_qwen2_fast import Qwen2TokenizerFast
+        from transformers import Qwen2TokenizerFast
         image_processor = Qwen2VLImageProcessor.from_pretrained(model_name_or_path)
         if data_args is not None:
             image_processor.do_resize = data_args.resize_use_processor
@@ -152,7 +164,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone in [QWEN2_5_VL, LamRA_QWEN2_5]:
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl.processing_qwen2_5_vl import Qwen2_5_VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl.image_processing_qwen2_5_vl import Qwen2_5_VLImageProcessor
-        from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import Qwen2TokenizerFast
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels
@@ -164,7 +176,7 @@ def load_processor(model_args, data_args=None):
         # TODO: qwen2.5 token selection not working yet
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection.processing_qwen2_5_vl import Qwen2_5_VLProcessor
         from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl_tokenselection.image_processing_qwen2_5_vl import Qwen2_5_VLImageProcessor
-        from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl_tokenselection.tokenization_qwen2_fast import Qwen2TokenizerFast
+        from transformers import Qwen2TokenizerFast
         min_pixels, max_pixels = None, None
         if data_args is not None:
             min_pixels, max_pixels = data_args.resize_min_pixels, data_args.resize_max_pixels
@@ -181,7 +193,7 @@ def load_processor(model_args, data_args=None):
     elif model_args.model_backbone == INTERNVIDEO2:
         return None
     elif model_args.model_backbone == COLPALI:
-        from transformers import AutoProcessor
+        from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPaliProcessor
         processor = ColPaliProcessor.from_pretrained(model_args.model_name)
     else:
         from transformers import AutoProcessor

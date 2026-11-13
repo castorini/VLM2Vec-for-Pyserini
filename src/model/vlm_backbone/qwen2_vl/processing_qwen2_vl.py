@@ -20,24 +20,17 @@
 """
 Processor class for Qwen2-VL.
 """
-from builtins import NotImplementedError
-
 from typing import List, Union
 
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_utils import ImageInput
-try:
-    # transformers>=4.52
-    from transformers.video_utils import VideoInput
-except ImportError:
-    from transformers.image_utils import VideoInput
+from transformers.video_utils import VideoInput
 
 from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 from .image_processing_qwen2_vl import Qwen2VLImageProcessor
-from .tokenization_qwen2 import Qwen2Tokenizer
-from .tokenization_qwen2_fast import Qwen2TokenizerFast
+from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 logger = logging.get_logger(__name__)
 
@@ -84,7 +77,7 @@ class Qwen2VLProcessor(ProcessorMixin):
         elif module_name == 'Qwen2TokenizerFast':
             return Qwen2TokenizerFast
         else:
-            raise NotImplementedError
+            return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __call__(
         self,

@@ -27,19 +27,13 @@ from typing import List, Union
 
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_utils import ImageInput
-try:
-    # transformers>=4.52
-    from transformers.video_utils import VideoInput
-except ImportError:
-    from transformers.image_utils import VideoInput
+from transformers.video_utils import VideoInput
 
 from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack, VideosKwargs
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 
 from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_5_vl import Qwen2_5_VLImageProcessor
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2 import Qwen2Tokenizer
-from vlm2vec_for_pyserini.model.vlm_backbone.qwen2_vl.tokenization_qwen2_fast import \
-    Qwen2TokenizerFast
+from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 
 class Qwen2_5_VLVideosProcessorKwargs(VideosKwargs, total=False):
@@ -91,7 +85,7 @@ class Qwen2_5_VLProcessor(ProcessorMixin):
         elif module_name == 'Qwen2TokenizerFast':
             return Qwen2TokenizerFast
         else:
-            raise NotImplementedError
+            return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __call__(
         self,

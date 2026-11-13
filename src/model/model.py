@@ -11,17 +11,19 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 
 from vlm2vec_for_pyserini.arguments import ModelArguments
 from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, get_backbone_name, print_master, QWEN2_5_VL, INTERNVIDEO2, \
-    QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI
-from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPali
-from vlm2vec_for_pyserini.model.baseline_backbone.gme.gme_inference import GmeQwen2VL
-from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_inference import LamRAQwen2VL
-from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_qwen25_inference import LamRAQwen25VL
-from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
-from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
+    QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI, load_hf_config
+from transformers.utils import is_flash_attn_2_available
 
-from transformers import modeling_utils
-if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARALLEL_STYLES is None:
-    modeling_utils.ALL_PARALLEL_STYLES = ["tp", "none", "colwise", 'rowwise']
+_ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
+_VENDORED_QWEN_BACKBONES = {QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION}
+
+
+def _load_adapter_config(model_name_or_path):
+    from peft import PeftConfig
+    try:
+        return PeftConfig.from_pretrained(model_name_or_path)
+    except (ValueError, OSError):
+        return None
 
 
 class MMEBModel(nn.Module):
@@ -123,7 +125,7 @@ class MMEBModel(nn.Module):
 
     @classmethod
     def build(cls, model_args: ModelArguments, **kwargs):
-        config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
+        config = load_hf_config(model_args.model_name)
         model_backbone = get_backbone_name(hf_config=config)
         print_master(f'Loading backbone [{model_backbone}] from {model_args.model_name}')
         # Loading the base model
@@ -131,6 +133,7 @@ class MMEBModel(nn.Module):
             config._attn_implementation = "eager"
             config.padding_side = "right"
             config.use_cache = False
+            from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
             base_model = Phi3VForCausalLM.from_pretrained(
                 model_args.model_name,
                 config=config,
@@ -140,6 +143,7 @@ class MMEBModel(nn.Module):
         elif model_backbone == LLAVA_NEXT:
             config.use_cache = False
             config.padding_side = "left"
+            from vlm2vec_for_pyserini.model.baseline_backbone.llava_next import LlavaNextForConditionalGeneration
             base_model = LlavaNextForConditionalGeneration.from_pretrained(
                 model_args.model_name,
                 config=config,
@@ -147,7 +151,9 @@ class MMEBModel(nn.Module):
                 low_cpu_mem_usage=True,
             )
         elif model_backbone in [QWEN2_VL, QWEN2_5_VL]:
-            config._attn_implementation = "flash_attention_2"
+            # transformers' own Qwen2(.5)-VL configs nest text fields under `text_config`
+            config = backbone2model[model_backbone].config_class.from_pretrained(model_args.model_name)
+            config._attn_implementation = _ATTN_IMPLEMENTATION
             config.padding_side = "left"
             config.use_cache = False
             base_model = backbone2model[model_backbone].from_pretrained(
@@ -157,7 +163,8 @@ class MMEBModel(nn.Module):
                 low_cpu_mem_usage=True,
             )
         elif model_backbone in [QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION]:
-            config._attn_implementation = "flash_attention_2"
+            config = backbone2model[model_backbone].config_class.from_pretrained(model_args.model_name)
+            config._attn_implementation = _ATTN_IMPLEMENTATION
             config.padding_side = "left"
             config.use_cache = False
 
@@ -215,25 +222,41 @@ class MMEBModel(nn.Module):
     def load(cls, model_args: ModelArguments, is_trainable=True, **kwargs):
         # Loading the base model
         model_name_or_path = model_args.checkpoint_path if model_args.checkpoint_path else model_args.model_name
-        config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+        config = load_hf_config(model_name_or_path)
         if not hasattr(model_args, "model_backbone") or not model_args.model_backbone:
             model_backbone = get_backbone_name(hf_config=config, model_type=model_args.model_type)
             setattr(model_args, 'model_backbone', model_backbone)
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
-            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
-            config._attn_implementation = "flash_attention_2"
-            config.vision_config._attn_implementation = "flash_attention_2"
-            base_model = backbone2model[model_args.model_backbone].from_pretrained(
-                model_args.model_name,
+            if model_args.model_backbone in _VENDORED_QWEN_BACKBONES:
+                # transformers' own Qwen2(.5)-VL configs nest text fields under `text_config`
+                config = backbone2model[model_args.model_backbone].config_class.from_pretrained(model_args.model_name)
+            else:
+                config = load_hf_config(model_args.model_name)
+            config._attn_implementation = _ATTN_IMPLEMENTATION
+            config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
+            model_cls = backbone2model[model_args.model_backbone]
+            adapter_config = _load_adapter_config(model_args.model_name) if model_args.model_backbone in _VENDORED_QWEN_BACKBONES else None
+            base_model = model_cls.from_pretrained(
+                adapter_config.base_model_name_or_path if adapter_config else model_args.model_name,
                 torch_dtype=torch.bfloat16,
                 low_cpu_mem_usage=True,
                 config=config
             )
+            if adapter_config is not None:
+                # Attach with PEFT: transformers' adapter loader drops older DoRA magnitude keys.
+                base_model = PeftModel.from_pretrained(
+                    base_model, model_args.model_name, config=adapter_config, is_trainable=is_trainable
+                )
+                # Keep adapter weights in bf16, as transformers 4.x adapter loading did.
+                for name, param in base_model.named_parameters():
+                    if "lora_" in name:
+                        param.data = param.data.to(torch.bfloat16)
         elif model_args.model_backbone == PHI3V:
             config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
             config.use_cache = False
             config.padding_side = "right"
+            from vlm2vec_for_pyserini.model.baseline_backbone.phi3_v.modeling_phi3_v import Phi3VForCausalLM
             base_model = Phi3VForCausalLM.from_pretrained(model_args.model_name, **kwargs, config=config,
                                                           torch_dtype=torch.bfloat16, trust_remote_code=True)
             base_model.padding_side = "right"
@@ -244,15 +267,19 @@ class MMEBModel(nn.Module):
             base_model = backbone2model[model_args.model_backbone].from_pretrained("src/model/vlm_backbone/internvideo2/", config=config,
                                                                                    trust_remote_code=True)
         elif model_args.model_backbone == GME:
+            from vlm2vec_for_pyserini.model.baseline_backbone.gme.gme_inference import GmeQwen2VL
             base_model = GmeQwen2VL(model_args.model_name, processor=kwargs['processor'])
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == LamRA:
+            from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_inference import LamRAQwen2VL
             base_model = LamRAQwen2VL(model_args.model_name)
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == LamRA_QWEN2_5:
+            from vlm2vec_for_pyserini.model.baseline_backbone.lamra.lamra_qwen25_inference import LamRAQwen25VL
             base_model = LamRAQwen25VL(model_args.model_name)
             setattr(base_model, 'config', config)
         elif model_args.model_backbone == COLPALI:
+            from vlm2vec_for_pyserini.model.baseline_backbone.colpali import ColPali
             base_model = ColPali.from_pretrained(model_args.model_name)
             setattr(base_model, 'config', config)
         else:

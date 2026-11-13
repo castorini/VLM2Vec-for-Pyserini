@@ -34,7 +34,7 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 
 from transformers.activations import ACT2FN
-from transformers.cache_utils import Cache, DynamicCache, SlidingWindowCache, StaticCache
+from transformers.cache_utils import Cache, DynamicCache, StaticCache
 from transformers.generation import GenerationMixin
 from transformers.modeling_attn_mask_utils import AttentionMaskConverter
 from transformers.modeling_outputs import BaseModelOutputWithPast, ModelOutput
@@ -116,8 +116,12 @@ class Qwen2_5_VisionPatchEmbed(nn.Module):
 class Qwen2_5_VisionRotaryEmbedding(nn.Module):
     def __init__(self, dim: int, theta: float = 10000.0) -> None:
         super().__init__()
-        inv_freq = 1.0 / (theta ** (torch.arange(0, dim, 2, dtype=torch.float) / dim))
-        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        self.dim = dim
+        self.theta = theta
+        self.register_buffer("inv_freq", self.compute_inv_freq(), persistent=False)
+
+    def compute_inv_freq(self, device=None) -> torch.Tensor:
+        return 1.0 / (self.theta ** (torch.arange(0, self.dim, 2, dtype=torch.float, device=device) / self.dim))
 
     def forward(self, seqlen: int) -> torch.Tensor:
         seq = torch.arange(seqlen, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
@@ -332,7 +336,7 @@ class Qwen2_5_VLPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = True
     _no_split_modules = ["Qwen2_5_VLDecoderLayer", "Qwen2_5_VLVisionBlock"]
     _skip_keys_device_placement = "past_key_values"
-    _supports_flash_attn_2 = True
+    _supports_flash_attn = True
     _supports_sdpa = True
     _supports_cache_class = True
     _supports_static_cache = False  # TODO (joao): fix. torch.compile failing probably due to `cache_positions`
@@ -347,6 +351,15 @@ class Qwen2_5_VLPreTrainedModel(PreTrainedModel):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
+        # Models are built on the meta device, so non-persistent buffers must be filled here
+        elif isinstance(module, Qwen2_5_VisionRotaryEmbedding):
+            with torch.no_grad():
+                module.inv_freq.copy_(module.compute_inv_freq())
+        elif isinstance(module, Qwen2_5_VLRotaryEmbedding):
+            with torch.no_grad():
+                inv_freq, module.attention_scaling = module.rope_init_fn(module.config)
+                module.inv_freq.copy_(inv_freq)
+            module.original_inv_freq = module.inv_freq
 
 
 class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
@@ -516,6 +529,17 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         return hidden_states
 
 
+# From transformers 4.51; transformers 5 removed the "default" entry of ROPE_INIT_FUNCTIONS.
+def _compute_default_rope_parameters(config, device=None, seq_len=None, **rope_kwargs):
+    base = config.rope_theta
+    partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
+    head_dim = getattr(config, "head_dim", None) or config.hidden_size // config.num_attention_heads
+    dim = int(head_dim * partial_rotary_factor)
+    attention_factor = 1.0  # Unused in this type of RoPE
+    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.int64).to(device=device, dtype=torch.float) / dim))
+    return inv_freq, attention_factor
+
+
 class Qwen2_5_VLRotaryEmbedding(nn.Module):
     def __init__(self, config: Qwen2_5_VLConfig, device=None):
         super().__init__()
@@ -528,7 +552,9 @@ class Qwen2_5_VLRotaryEmbedding(nn.Module):
         self.original_max_seq_len = config.max_position_embeddings
 
         self.config = config
-        self.rope_init_fn = ROPE_INIT_FUNCTIONS[self.rope_type]
+        self.rope_init_fn = (
+            _compute_default_rope_parameters if self.rope_type == "default" else ROPE_INIT_FUNCTIONS[self.rope_type]
+        )
 
         inv_freq, self.attention_scaling = self.rope_init_fn(self.config, device)
         self.register_buffer("inv_freq", inv_freq, persistent=False)
@@ -863,6 +889,7 @@ class Qwen2_5_VLFlashAttention2(Qwen2_5_VLAttention):
             sliding_window=sliding_window,
             is_causal=self.is_causal,
             use_top_left_mask=self._flash_attn_uses_top_left_mask,
+            attn_implementation="flash_attention_2",
         )
 
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
@@ -1230,7 +1257,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         # to infer the attention mask.
         past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
         using_static_cache = isinstance(past_key_values, StaticCache)
-        using_sliding_window_cache = isinstance(past_key_values, SlidingWindowCache)
+        using_sliding_window_cache = isinstance(past_key_values, StaticCache)
 
         # When output attentions is True, sdpa implementation's forward method calls the eager implementation's forward
         if (
@@ -1250,7 +1277,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         dtype, device = input_tensor.dtype, input_tensor.device
         min_dtype = torch.finfo(dtype).min
         sequence_length = input_tensor.shape[1]
-        # SlidingWindowCache or StaticCache
+        # StaticCache (transformers 5 merged SlidingWindowCache into it)
         if using_sliding_window_cache or using_static_cache:
             target_length = past_key_values.get_max_cache_shape()
         # DynamicCache or no cache
@@ -1335,7 +1362,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
             if config.sliding_window is not None:
                 # if we have sliding window, we should not attend to tokens beyond sliding window length, so we mask them out also
                 # the check is needed to verify is current checkpoint was trained with sliding window or not
-                if not isinstance(past_key_values, SlidingWindowCache) or sequence_length > target_length:
+                if not isinstance(past_key_values, StaticCache) or sequence_length > target_length:
                     sliding_attend_mask = torch.arange(target_length, device=device) <= (
                         cache_position.reshape(-1, 1) - config.sliding_window
                     )
@@ -1471,7 +1498,7 @@ QWEN2_5_VL_INPUTS_DOCSTRING = r"""
 
 
 class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMixin):
-    _tied_weights_keys = ["lm_head.weight"]
+    _tied_weights_keys = {"lm_head.weight": "model.embed_tokens.weight"}
     config_class = Qwen2_5_VLConfig
     _no_split_modules = ["Qwen2VLDecoderLayer", "Qwen2_5_VLVisionBlock"]
 

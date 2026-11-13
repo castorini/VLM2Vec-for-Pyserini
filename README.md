@@ -32,6 +32,8 @@ cd VLM2Vec-for-Pyserini
 pip install .
 ```
 
+Optional extras: `[flash]` installs [FlashAttention-2](https://github.com/Dao-AILab/flash-attention) (CUDA only; needed to reproduce the 2CR numbers exactly, otherwise SDPA is used), and `[video]` installs `decord` for the video benchmarks.
+
 ## Quick Start
 Assuming that you have cloned the repository and you are in the root dir:
 1. Download the visdoc from HuggingFace and convert the `corpus`, `topics` and `queries` to the format ready for Pyserini:

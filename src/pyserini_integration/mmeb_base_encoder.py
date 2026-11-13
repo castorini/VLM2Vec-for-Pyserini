@@ -13,12 +13,11 @@ import torch.nn.functional as F
 from datasets import Dataset, concatenate_datasets
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import AutoConfig
 
 from vlm2vec_for_pyserini.arguments import DataArguments, ModelArguments
 from vlm2vec_for_pyserini.model.model import MMEBModel
 from vlm2vec_for_pyserini.model.processor import (COLPALI, get_backbone_name,
-                                                  load_processor)
+                                                  load_hf_config, load_processor)
 from vlm2vec_for_pyserini.utils.basic_utils import (batch_to_device,
                                                     print_master, print_rank)
 from vlm2vec_for_pyserini.pyserini_integration.visdoc_dataset import VisDocDatasetForPyserini
@@ -58,7 +57,7 @@ class MMEBBaseEncoder(ABC):
                 sys.argv.append("--local_rank")
                 sys.argv.append(rank)
         # --- Model Loading ---
-        hf_config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+        hf_config = load_hf_config(model_name)
         self.model_backbone = get_backbone_name(
             hf_config=hf_config, model_type=model_type
         )

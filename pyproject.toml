@@ -21,6 +21,10 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
+[project.optional-dependencies]
+flash = ["flash-attn"]
+video = ["decord", "qwen-vl-utils[decord]==0.0.8"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
