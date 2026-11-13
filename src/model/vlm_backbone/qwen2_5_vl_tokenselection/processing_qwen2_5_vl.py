@@ -34,6 +34,7 @@ from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpa
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 
 from ...utils import get_select_mask
+from .image_processing_qwen2_5_vl import Qwen2_5_VLImageProcessor
 
 class Qwen2_5_VLVideosProcessorKwargs(VideosKwargs, total=False):
     fps: Union[List[float], float]
@@ -68,6 +69,13 @@ class Qwen2_5_VLProcessor(ProcessorMixin):
 
     image_processor_class = "Qwen2_5_VLImageProcessor"
     tokenizer_class = ("Qwen2Tokenizer", "Qwen2TokenizerFast")
+
+    @staticmethod
+    def get_possibly_dynamic_module(module_name):
+        # transformers has no Qwen2_5_VLImageProcessor to resolve this name to
+        if module_name == "Qwen2_5_VLImageProcessor":
+            return Qwen2_5_VLImageProcessor
+        return ProcessorMixin.get_possibly_dynamic_module(module_name)
 
     def __init__(self, image_processor=None, tokenizer=None, chat_template=None, **kwargs):
         self.image_token = "<|image_pad|>" if not hasattr(tokenizer, "image_token") else tokenizer.image_token

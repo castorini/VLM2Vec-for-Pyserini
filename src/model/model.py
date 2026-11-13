@@ -15,6 +15,7 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 from transformers.utils import is_flash_attn_2_available
 
 _ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
+_VENDORED_QWEN_BACKBONES = {QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION}
 
 
 def _load_adapter_config(model_name_or_path):
@@ -162,6 +163,7 @@ class MMEBModel(nn.Module):
                 low_cpu_mem_usage=True,
             )
         elif model_backbone in [QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION]:
+            config = backbone2model[model_backbone].config_class.from_pretrained(model_args.model_name)
             config._attn_implementation = _ATTN_IMPLEMENTATION
             config.padding_side = "left"
             config.use_cache = False
@@ -226,7 +228,7 @@ class MMEBModel(nn.Module):
             setattr(model_args, 'model_backbone', model_backbone)
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
-            if model_args.model_backbone in {QWEN2_VL, QWEN2_5_VL}:
+            if model_args.model_backbone in _VENDORED_QWEN_BACKBONES:
                 # transformers' own Qwen2(.5)-VL configs nest text fields under `text_config`
                 config = backbone2model[model_args.model_backbone].config_class.from_pretrained(model_args.model_name)
             else:
@@ -234,7 +236,7 @@ class MMEBModel(nn.Module):
             config._attn_implementation = _ATTN_IMPLEMENTATION
             config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
             model_cls = backbone2model[model_args.model_backbone]
-            adapter_config = _load_adapter_config(model_args.model_name) if model_args.model_backbone in {QWEN2_VL, QWEN2_5_VL} else None
+            adapter_config = _load_adapter_config(model_args.model_name) if model_args.model_backbone in _VENDORED_QWEN_BACKBONES else None
             base_model = model_cls.from_pretrained(
                 adapter_config.base_model_name_or_path if adapter_config else model_args.model_name,
                 torch_dtype=torch.bfloat16,
