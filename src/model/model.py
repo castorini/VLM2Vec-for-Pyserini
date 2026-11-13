@@ -12,10 +12,7 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 from vlm2vec_for_pyserini.arguments import ModelArguments
 from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, get_backbone_name, print_master, QWEN2_5_VL, INTERNVIDEO2, \
     QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI, load_hf_config
-from transformers import modeling_utils
 from transformers.utils import is_flash_attn_2_available
-if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARALLEL_STYLES is None:
-    modeling_utils.ALL_PARALLEL_STYLES = ["tp", "none", "colwise", 'rowwise']
 
 _ATTN_IMPLEMENTATION = "flash_attention_2" if is_flash_attn_2_available() else "sdpa"
 
@@ -228,7 +225,7 @@ class MMEBModel(nn.Module):
         print_master(f'Loading backbone [{model_args.model_backbone}] from {model_name_or_path}')
         if model_args.model_backbone in {LLAVA_NEXT, QWEN2_VL, QWEN2_5_VL, QWEN2_VL_TOKENSELECTION, QWEN2_5_VL_TOKENSELECTION, E5_V}:
             if model_args.model_backbone == QWEN2_VL:
-                # transformers>=5's Qwen2VLConfig nests text fields under `text_config`
+                # transformers' own Qwen2VLConfig nests text fields under `text_config`
                 config = backbone2model[QWEN2_VL].config_class.from_pretrained(model_args.model_name)
             else:
                 config = load_hf_config(model_args.model_name)
@@ -243,11 +240,11 @@ class MMEBModel(nn.Module):
                 config=config
             )
             if adapter_config is not None:
-                # Attach with PEFT: transformers>=5's adapter loader drops older DoRA magnitude keys.
+                # Attach with PEFT: transformers' adapter loader drops older DoRA magnitude keys.
                 base_model = PeftModel.from_pretrained(
                     base_model, model_args.model_name, config=adapter_config, is_trainable=is_trainable
                 )
-                # Keep adapter weights in bf16, as transformers' adapter loading did.
+                # Keep adapter weights in bf16, as transformers 4.x adapter loading did.
                 for name, param in base_model.named_parameters():
                     if "lora_" in name:
                         param.data = param.data.to(torch.bfloat16)

@@ -46,11 +46,6 @@ from transformers.utils import (
 )
 from .configuration_qwen2_vl import Qwen2VLConfig, Qwen2VLVisionConfig
 
-import transformers as _transformers
-from packaging import version as _version
-
-_TRANSFORMERS_V5 = _version.parse(_transformers.__version__).major >= 5
-
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_varlen_func
 
@@ -313,8 +308,7 @@ class Qwen2VLPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = True
     _no_split_modules = ["Qwen2VLDecoderLayer", "Qwen2VLVisionBlock"]
     _skip_keys_device_placement = "past_key_values"
-    _supports_flash_attn = True  # transformers>=5
-    _supports_flash_attn_2 = True
+    _supports_flash_attn = True
     _supports_sdpa = True
     _supports_cache_class = True
     _supports_static_cache = True
@@ -329,7 +323,7 @@ class Qwen2VLPreTrainedModel(PreTrainedModel):
             module.weight.data.normal_(mean=0.0, std=std)
             if module.padding_idx is not None:
                 module.weight.data[module.padding_idx].zero_()
-        # transformers>=5 builds models on the meta device and relies on this to fill non-persistent buffers
+        # Models are built on the meta device, so non-persistent buffers must be filled here
         elif isinstance(module, VisionRotaryEmbedding):
             with torch.no_grad():
                 module.inv_freq.copy_(module.compute_inv_freq())
@@ -426,7 +420,7 @@ class Qwen2VisionTransformerPretrainedModel(Qwen2VLPreTrainedModel):
         return self.merger(hidden_states)
 
 
-# From transformers 4.51; transformers>=5 removed the "default" entry of ROPE_INIT_FUNCTIONS.
+# From transformers 4.51; transformers 5 removed the "default" entry of ROPE_INIT_FUNCTIONS.
 def _compute_default_rope_parameters(config, device=None, seq_len=None, **rope_kwargs):
     base = config.rope_theta
     partial_rotary_factor = config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
@@ -770,7 +764,6 @@ class Qwen2VLFlashAttention2(Qwen2VLAttention):
         else:
             sliding_window = None
 
-        flash_kwargs = {"attn_implementation": "flash_attention_2"} if _TRANSFORMERS_V5 else {}
         attn_output = _flash_attention_forward(
             query_states,
             key_states,
@@ -781,7 +774,7 @@ class Qwen2VLFlashAttention2(Qwen2VLAttention):
             sliding_window=sliding_window,
             is_causal=self.is_causal,
             use_top_left_mask=self._flash_attn_uses_top_left_mask,
-            **flash_kwargs,
+            attn_implementation="flash_attention_2",
         )
 
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
@@ -1391,9 +1384,7 @@ QWEN2_VL_INPUTS_DOCSTRING = r"""
 
 
 class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
-    _tied_weights_keys = (
-        {"lm_head.weight": "model.embed_tokens.weight"} if _TRANSFORMERS_V5 else ["lm_head.weight"]
-    )
+    _tied_weights_keys = {"lm_head.weight": "model.embed_tokens.weight"}
 
     def __init__(self, config):
         super().__init__(config)

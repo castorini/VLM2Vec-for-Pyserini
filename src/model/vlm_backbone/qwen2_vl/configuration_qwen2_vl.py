@@ -258,7 +258,7 @@ class Qwen2VLConfig(PretrainedConfig):
             self.rope_scaling["rope_type"] = self.rope_scaling["type"]
         rope_config_validation(self, ignore_keys={"mrope_section"})
 
-        # transformers<5 always defined these
+        # PretrainedConfig no longer defaults these, but the model code reads them
         for token_id_name in ("pad_token_id", "bos_token_id", "eos_token_id"):
             kwargs.setdefault(token_id_name, None)
 

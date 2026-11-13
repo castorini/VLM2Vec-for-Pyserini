@@ -26,11 +26,7 @@ from typing import List, Union
 
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.image_utils import ImageInput
-try:
-    # transformers>=4.52
-    from transformers.video_utils import VideoInput
-except ImportError:
-    from transformers.image_utils import VideoInput
+from transformers.video_utils import VideoInput
 
 
 from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpack
