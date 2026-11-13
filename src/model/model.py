@@ -11,7 +11,7 @@ from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, ge
 
 from vlm2vec_for_pyserini.arguments import ModelArguments
 from vlm2vec_for_pyserini.model.processor import LLAVA_NEXT, QWEN2_VL, PHI3V, get_backbone_name, print_master, QWEN2_5_VL, INTERNVIDEO2, \
-    QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI
+    QWEN2_VL_TOKENSELECTION, backbone2model, GME, VLM_IMAGE_TOKENS, LamRA, LamRA_QWEN2_5, COLPALI, load_hf_config
 from transformers import modeling_utils
 from transformers.utils import is_flash_attn_2_available
 if not hasattr(modeling_utils, "ALL_PARALLEL_STYLES") or modeling_utils.ALL_PARALLEL_STYLES is None:
@@ -127,10 +127,7 @@ class MMEBModel(nn.Module):
 
     @classmethod
     def build(cls, model_args: ModelArguments, **kwargs):
-        try:
-            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
-        except (ImportError, OSError):
-            config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
+        config = load_hf_config(model_args.model_name)
         model_backbone = get_backbone_name(hf_config=config)
         print_master(f'Loading backbone [{model_backbone}] from {model_args.model_name}')
         # Loading the base model
@@ -224,10 +221,7 @@ class MMEBModel(nn.Module):
     def load(cls, model_args: ModelArguments, is_trainable=True, **kwargs):
         # Loading the base model
         model_name_or_path = model_args.checkpoint_path if model_args.checkpoint_path else model_args.model_name
-        try:
-            config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
-        except (ImportError, OSError):
-            config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=False)
+        config = load_hf_config(model_name_or_path)
         if not hasattr(model_args, "model_backbone") or not model_args.model_backbone:
             model_backbone = get_backbone_name(hf_config=config, model_type=model_args.model_type)
             setattr(model_args, 'model_backbone', model_backbone)
@@ -237,10 +231,7 @@ class MMEBModel(nn.Module):
                 # transformers>=5's Qwen2VLConfig nests text fields under `text_config`
                 config = backbone2model[QWEN2_VL].config_class.from_pretrained(model_args.model_name)
             else:
-                try:
-                    config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=True)
-                except (ImportError, OSError):
-                    config = AutoConfig.from_pretrained(model_args.model_name, trust_remote_code=False)
+                config = load_hf_config(model_args.model_name)
             config._attn_implementation = _ATTN_IMPLEMENTATION
             config.vision_config._attn_implementation = _ATTN_IMPLEMENTATION
             model_cls = backbone2model[model_args.model_backbone]

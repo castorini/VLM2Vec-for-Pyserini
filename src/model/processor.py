@@ -101,6 +101,14 @@ class _LazyBackboneMap(dict):
 backbone2model = _LazyBackboneMap(_BACKBONE_MODEL_PATHS)
 
 
+def load_hf_config(model_name_or_path):
+    from transformers import AutoConfig
+    try:
+        return AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+    except (ImportError, OSError):
+        return AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=False)
+
+
 def load_processor(model_args, data_args=None):
     """
     Load processor based on VLM backbone.

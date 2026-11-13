@@ -34,7 +34,6 @@ from transformers.processing_utils import ProcessingKwargs, ProcessorMixin, Unpa
 from transformers.tokenization_utils_base import PreTokenizedInput, TextInput
 from transformers.utils import logging
 from .image_processing_qwen2_vl import Qwen2VLImageProcessor
-# The vendored Qwen2 tokenizers tokenize character by character under transformers>=5.
 from transformers import Qwen2Tokenizer, Qwen2TokenizerFast
 
 logger = logging.get_logger(__name__)
