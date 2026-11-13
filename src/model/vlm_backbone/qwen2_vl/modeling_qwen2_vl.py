@@ -30,7 +30,7 @@ import torch.utils.checkpoint
 from torch.nn import CrossEntropyLoss, LayerNorm
 
 from transformers.activations import ACT2FN
-from transformers.cache_utils import Cache, DynamicCache, SlidingWindowCache, StaticCache
+from transformers.cache_utils import Cache, DynamicCache, StaticCache
 from transformers.generation import GenerationMixin
 from transformers.modeling_attn_mask_utils import AttentionMaskConverter
 from transformers.modeling_outputs import BaseModelOutputWithPast, ModelOutput
@@ -1142,7 +1142,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         # to infer the attention mask.
         past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
         using_static_cache = isinstance(past_key_values, StaticCache)
-        using_sliding_window_cache = isinstance(past_key_values, SlidingWindowCache)
+        using_sliding_window_cache = isinstance(past_key_values, StaticCache)
 
         # When output attentions is True, sdpa implementation's forward method calls the eager implementation's forward
         if (
@@ -1162,7 +1162,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         dtype, device = input_tensor.dtype, input_tensor.device
         min_dtype = torch.finfo(dtype).min
         sequence_length = input_tensor.shape[1]
-        # SlidingWindowCache or StaticCache
+        # StaticCache (transformers 5 merged SlidingWindowCache into it)
         if using_sliding_window_cache or using_static_cache:
             target_length = past_key_values.get_max_cache_shape()
         # DynamicCache or no cache
@@ -1248,7 +1248,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
             if config.sliding_window is not None:
                 # if we have sliding window, we should not attend to tokens beyond sliding window length, so we mask them out also
                 # the check is needed to verify is current checkpoint was trained with sliding window or not
-                if not isinstance(past_key_values, SlidingWindowCache) or sequence_length > target_length:
+                if not isinstance(past_key_values, StaticCache) or sequence_length > target_length:
                     sliding_attend_mask = torch.arange(target_length, device=device) <= (
                         cache_position.reshape(-1, 1) - config.sliding_window
                     )
